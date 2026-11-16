@@ -1,6 +1,6 @@
-# TriageQ Smart Clinic System
+# MediCore Clinic Smart Kiosk System
 
-A comprehensive hospital triage & queue management system comprising a Touchscreen Kiosk, Doctor Dashboard, Patient Mobile Tracker, and ESP32 Emergency Alarm.
+A comprehensive hospital triage and queue management system comprising a Touchscreen Kiosk, Doctor Dashboard, Patient Mobile Tracker, and ESP32 Clinical Node & Emergency Alarm.
 
 ---
 
