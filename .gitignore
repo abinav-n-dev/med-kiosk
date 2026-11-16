@@ -1,0 +1,9 @@
+.vercel
+hardware/build/
+test_temp/build/
+*.bin
+*.elf
+*.map
+__pycache__/
+*.pyc
+.DS_Store

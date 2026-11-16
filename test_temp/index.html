@@ -1,0 +1,313 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>MLX90614 Temperature Tester Dashboard</title>
+  <style>
+    :root {
+      --bg: #090d16;
+      --card: #131929;
+      --border: #232d4b;
+      --text: #f8fafc;
+      --muted: #94a3b8;
+      --green: #10b981;
+      --red: #ef4444;
+      --blue: #38bdf8;
+      --amber: #f59e0b;
+    }
+    * { box-sizing: border-box; margin: 0; padding: 0; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; }
+    body {
+      background: var(--bg);
+      color: var(--text);
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      padding: 20px;
+    }
+    .wrapper {
+      width: 100%;
+      max-width: 580px;
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 20px;
+      padding: 28px;
+      box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5);
+    }
+    .title-row {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 24px;
+      padding-bottom: 16px;
+      border-bottom: 1px solid var(--border);
+    }
+    .title-row h1 { font-size: 1.35rem; font-weight: 700; }
+    .badge {
+      font-size: 0.78rem;
+      font-weight: 700;
+      padding: 6px 12px;
+      border-radius: 999px;
+      letter-spacing: 0.05em;
+      text-transform: uppercase;
+    }
+    .badge.ok { background: rgba(16, 185, 129, 0.18); color: var(--green); border: 1px solid var(--green); }
+    .badge.err { background: rgba(239, 68, 68, 0.18); color: var(--red); border: 1px solid var(--red); }
+    
+    .connection-panel {
+      display: flex;
+      gap: 10px;
+      margin-bottom: 20px;
+    }
+    .btn {
+      background: #1e293b;
+      color: var(--text);
+      border: 1px solid var(--border);
+      padding: 10px 16px;
+      border-radius: 8px;
+      font-weight: 600;
+      font-size: 0.88rem;
+      cursor: pointer;
+      transition: all 0.2s ease;
+      flex: 1;
+    }
+    .btn:hover { background: #334155; }
+    .btn.primary { background: #0284c7; border-color: #38bdf8; }
+    .btn.primary:hover { background: #0369a1; }
+    
+    .big-card {
+      background: rgba(0,0,0,0.3);
+      border: 1px solid var(--border);
+      border-radius: 16px;
+      padding: 32px 20px;
+      text-align: center;
+      margin-bottom: 20px;
+      position: relative;
+    }
+    .temp-label { font-size: 0.82rem; text-transform: uppercase; color: var(--muted); letter-spacing: 0.06em; margin-bottom: 8px; }
+    .temp-num { font-size: 4.2rem; font-weight: 800; line-height: 1; margin-bottom: 10px; }
+    .temp-sub { font-size: 1.4rem; font-weight: 600; color: var(--blue); }
+    
+    .bar-bg {
+      width: 100%;
+      height: 10px;
+      background: #1e293b;
+      border-radius: 999px;
+      margin-top: 24px;
+      overflow: hidden;
+    }
+    .bar-fill {
+      height: 100%;
+      width: 0%;
+      background: linear-gradient(90deg, #38bdf8, #10b981, #f59e0b, #ef4444);
+      transition: width 0.3s ease;
+    }
+    
+    .stats-row {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 12px;
+      margin-bottom: 20px;
+    }
+    .stat-box {
+      background: rgba(0,0,0,0.2);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 14px;
+    }
+    .stat-label { font-size: 0.72rem; color: var(--muted); text-transform: uppercase; margin-bottom: 6px; }
+    .stat-val { font-size: 1.25rem; font-weight: 700; }
+    
+    .wiring-box {
+      background: rgba(56, 189, 248, 0.05);
+      border: 1px solid rgba(56, 189, 248, 0.2);
+      border-radius: 12px;
+      padding: 16px;
+      font-size: 0.84rem;
+      line-height: 1.6;
+    }
+    .wiring-box strong { color: var(--blue); display: block; margin-bottom: 6px; }
+    .wire-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 6px; margin-top: 8px; }
+    .wire-item { background: rgba(0,0,0,0.3); padding: 6px 10px; border-radius: 6px; border: 1px solid var(--border); }
+    .wire-item span.s { color: var(--amber); font-weight: 600; }
+    .wire-item span.e { color: var(--blue); font-weight: 600; }
+
+    .pulse {
+      display: inline-block;
+      width: 8px;
+      height: 8px;
+      background: var(--green);
+      border-radius: 50%;
+      margin-right: 6px;
+      animation: pulseAnim 1.2s infinite;
+    }
+    @keyframes pulseAnim {
+      0% { opacity: 0.3; transform: scale(0.85); }
+      50% { opacity: 1; transform: scale(1.15); }
+      100% { opacity: 0.3; transform: scale(0.85); }
+    }
+  </style>
+</head>
+<body>
+  <div class="wrapper">
+    <div class="title-row">
+      <div>
+        <h1>MLX90614 Tester</h1>
+        <div style="font-size:0.75rem; color:var(--muted); margin-top:4px;">Single-Sensor Isolated Test Rig</div>
+      </div>
+      <div id="badge" class="badge err">DISCONNECTED</div>
+    </div>
+
+    <div class="connection-panel">
+      <button id="btnSerial" class="btn primary" onclick="connectSerial()">Connect via USB (Web Serial)</button>
+      <button id="btnWifi" class="btn" onclick="connectWifi()">Connect via Wi-Fi</button>
+    </div>
+
+    <div class="big-card">
+      <div class="temp-label">Target / Skin Temperature</div>
+      <div id="dispF" class="temp-num">--.- &deg;F</div>
+      <div id="dispC" class="temp-sub">--.- &deg;C</div>
+      <div class="bar-bg">
+        <div id="barFill" class="bar-fill"></div>
+      </div>
+    </div>
+
+    <div class="stats-row">
+      <div class="stat-box">
+        <div class="stat-label">Ambient / Room Temp</div>
+        <div id="dispAmb" class="stat-val">--.- &deg;F</div>
+      </div>
+      <div class="stat-box">
+        <div class="stat-label">I2C Response</div>
+        <div id="dispI2C" class="stat-val">0x5A Waiting</div>
+      </div>
+    </div>
+
+    <div class="wiring-box">
+      <strong>Isolated 4-Wire Connection:</strong>
+      Connect only these 4 wires to the spare ESP32:
+      <div class="wire-grid">
+        <div class="wire-item"><span class="s">VIN</span> &rarr; <span class="e">ESP32 VIN (5V)</span></div>
+        <div class="wire-item"><span class="s">GND</span> &rarr; <span class="e">ESP32 GND</span></div>
+        <div class="wire-item"><span class="s">SCL</span> &rarr; <span class="e">ESP32 D22</span></div>
+        <div class="wire-item"><span class="s">SDA</span> &rarr; <span class="e">ESP32 D21</span></div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    let port = null;
+    let reader = null;
+    let wifiInterval = null;
+
+    function updateUI(connected, objF, objC, ambF, i2cMsg) {
+      const badge = document.getElementById('badge');
+      const dispF = document.getElementById('dispF');
+      const dispC = document.getElementById('dispC');
+      const dispAmb = document.getElementById('dispAmb');
+      const dispI2C = document.getElementById('dispI2C');
+      const barFill = document.getElementById('barFill');
+
+      if (connected) {
+        badge.className = 'badge ok';
+        badge.innerHTML = '<span class="pulse"></span>0x5A ACK ONLINE';
+        dispF.textContent = objF.toFixed(1) + ' \u00B0F';
+        dispC.textContent = objC.toFixed(1) + ' \u00B0C';
+        dispF.style.color = (objF > 100.4) ? '#ef4444' : '#10b981';
+        dispAmb.textContent = ambF.toFixed(1) + ' \u00B0F';
+        dispI2C.textContent = i2cMsg || '0x5A (ACK)';
+        dispI2C.style.color = '#10b981';
+
+        // Percentage for 85F - 110F range
+        let pct = Math.min(100, Math.max(0, ((objF - 85) / 25) * 100));
+        barFill.style.width = pct + '%';
+      } else {
+        badge.className = 'badge err';
+        badge.textContent = 'NO DEVICE (NACK)';
+        dispF.textContent = '--.- \u00B0F';
+        dispC.textContent = '--.- \u00B0C';
+        dispF.style.color = 'var(--text)';
+        dispAmb.textContent = '--.- \u00B0F';
+        dispI2C.textContent = i2cMsg || 'Code 2 (NACK)';
+        dispI2C.style.color = '#ef4444';
+        barFill.style.width = '0%';
+      }
+    }
+
+    async function connectSerial() {
+      if (!('serial' in navigator)) {
+        alert('Web Serial API is not supported in this browser. Please use Google Chrome, Brave, or Edge.');
+        return;
+      }
+      try {
+        port = await navigator.serial.requestPort();
+        await port.open({ baudRate: 115200 });
+        document.getElementById('btnSerial').textContent = 'USB Connected';
+        document.getElementById('btnSerial').style.background = '#059669';
+
+        const textDecoder = new TextDecoderStream();
+        const readableStreamClosed = port.readable.pipeTo(textDecoder.writable);
+        reader = textDecoder.readable.getReader();
+
+        let lineBuf = '';
+        while (true) {
+          const { value, done } = await reader.read();
+          if (done) break;
+          lineBuf += value;
+          const lines = lineBuf.split('\n');
+          lineBuf = lines.pop();
+
+          for (const line of lines) {
+            parseSerialLine(line.trim());
+          }
+        }
+      } catch (err) {
+        console.error(err);
+      }
+    }
+
+    function parseSerialLine(l) {
+      // Matches both "Target: 98.60 F" and "Object: 98.60 F"
+      const match = l.match(/(?:Target|Object):\s*([\-0-9\.]+)\s*F(?:\s*\(([\-0-9\.]+)\s*C\))?/i);
+      const roomMatch = l.match(/(?:Room|Ambient):\s*([\-0-9\.]+)\s*F/i);
+
+      if (match) {
+        const objF = parseFloat(match[1]);
+        const objC = match[2] ? parseFloat(match[2]) : (objF - 32.0) * 5.0 / 9.0;
+        const ambF = roomMatch ? parseFloat(roomMatch[1]) : 75.0;
+
+        if (!isNaN(objF) && objF > 40.0 && objF < 160.0) {
+          updateUI(true, objF, objC, ambF, '0x5A Active (ACK)');
+        } else {
+          updateUI(false, 0, 0, ambF, 'Target reading: ' + objF + ' F');
+        }
+      } else if (l.includes('NACK') || l.includes('timeout') || l.includes('error')) {
+        updateUI(false, 0, 0, 0, '0x5A Waiting');
+      }
+    }
+
+    function connectWifi() {
+      const ip = prompt('Enter ESP32 IP address (from Serial Monitor):', '192.168.4.1');
+      if (!ip) return;
+      if (wifiInterval) clearInterval(wifiInterval);
+
+      document.getElementById('btnWifi').textContent = 'Polling: ' + ip;
+      document.getElementById('btnWifi').style.background = '#0284c7';
+
+      wifiInterval = setInterval(async () => {
+        try {
+          const r = await fetch('http://' + ip + '/api/temp', { mode: 'cors' });
+          if (!r.ok) return;
+          const d = await r.json();
+          updateUI(d.connected, d.objectF, d.objectC, d.ambientF, d.connected ? '0x5A (ACK)' : 'Code 2 (NACK)');
+        } catch (e) {
+          updateUI(false, 0, 0, 0, 'Offline');
+        }
+      }, 400);
+    }
+  </script>
+</body>
+</html>
+

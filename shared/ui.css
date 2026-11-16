@@ -1,0 +1,407 @@
+/* TriageQ kiosk styles. Change colours/sizes here (CSS variables). */
+@font-face{font-family:K;font-weight:400;src:url(../vendor/fonts/noto-sans-latin-400-normal.woff2),url(../vendor/fonts/noto-sans-devanagari-devanagari-400-normal.woff2)}
+@font-face{font-family:K;font-weight:700;src:url(../vendor/fonts/noto-sans-latin-700-normal.woff2),url(../vendor/fonts/noto-sans-devanagari-devanagari-700-normal.woff2)}
+:root{
+  color-scheme: light !important;
+  supported-color-schemes: light;
+  forced-color-adjust: none !important;
+  --p:#0E7490;--pd:#155e75;--pl:#e0f2fe;
+  --red:#DC2626;--redd:#991b1b;--redl:#fee2e2;
+  --ok:#16A34A;--okl:#dcfce7;
+  --ink:#0f172a;--mut:#475569;--sub:#64748b;
+  --bg:#f8fafc;--card:#ffffff;--border:#e2e8f0;
+  --r:16px;--shadow:0 4px 20px -2px rgba(15,23,42,0.08);
+}
+*{box-sizing:border-box;-webkit-tap-highlight-color:transparent;user-select:none}
+html,body{color-scheme: light !important;forced-color-adjust: none !important;margin:0;height:100%;font:400 clamp(16px,1.8vmin,24px)/1.35 K,"Noto Sans","Noto Sans Devanagari",system-ui,sans-serif;color:var(--ink);background:var(--bg);touch-action:manipulation}
+
+/* Kiosk Core */
+#app{position:relative;min-height:100%;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:clamp(16px,3vmin,40px);gap:2vmin;text-align:center;overflow-y:auto;overflow-x:hidden}
+h1{font-size:clamp(32px,4.5vmin,56px);margin:0;font-weight:700}
+h2{font-size:clamp(24px,3.2vmin,38px);margin:0;font-weight:700}
+h3{font-size:clamp(18px,2.2vmin,26px);margin:0;font-weight:700}
+p{margin:0;color:var(--mut)}
+
+button{font:inherit;font-weight:700;min-height:56px;border:0;border-radius:var(--r);padding:0 24px;background:var(--p);color:#fff;cursor:pointer;box-shadow:0 4px 0 var(--pd);transition:all .1s ease}
+button:active{transform:translateY(3px);box-shadow:none}
+button:disabled{background:#cbd5e1;box-shadow:none;color:#64748b;cursor:not-allowed}
+button:focus-visible{outline:4px solid #f59e0b}
+.alt{background:#fff;color:var(--p);box-shadow:0 0 0 2px var(--p) inset}
+.alt:active{background:#f0f9ff}
+
+.row{display:flex;gap:2vmin;flex-wrap:wrap;justify-content:center;width:100%}
+.big{min-width:32vmin;min-height:16vmin;font-size:clamp(28px,4vmin,48px)}
+.card{background:var(--card);border-radius:var(--r);padding:2.5vmin;box-shadow:var(--shadow);width:min(100%,900px);border:1px solid var(--border)}
+.strip{display:flex;gap:3vmin;justify-content:center;color:var(--mut);font-size:.85em}.strip b{color:var(--p)}
+.pad{display:grid;grid-template-columns:repeat(3,1fr);gap:1.4vmin;width:min(100%,520px)}.pad button{min-height:8.5vmin;font-size:1.3em}
+.kb{display:flex;flex-direction:column;gap:1.2vmin;width:min(100%,950px)}.kb .row{gap:1vmin;flex-wrap:nowrap}.kb button{flex:1;padding:0;min-width:0;min-height:7.5vmin}
+.disp{font-size:clamp(30px,4.5vmin,56px);font-weight:700;letter-spacing:.12em;min-height:1.4em;border-bottom:4px solid var(--p);min-width:60%}
+.boxes{display:flex;gap:2vmin}.boxes span{width:10vmin;height:12vmin;display:grid;place-items:center;font-size:1.8em;font-weight:700;background:#fff;border:3px solid var(--p);border-radius:14px}
+.chips{display:flex;flex-wrap:wrap;gap:1.4vmin;justify-content:center;width:min(100%,900px)}
+.chips button{background:#fff;color:var(--ink);box-shadow:0 0 0 2px #cbd5e1 inset}.chips .on{background:var(--p);color:#fff;box-shadow:none}
+
+.tok{font-size:clamp(80px,15vmin,180px);font-weight:700;color:var(--p);line-height:1;letter-spacing:.04em}
+.warn{background:#fef3c7;color:#92400e;border-radius:14px;padding:1.4vmin 2.4vmin}
+.err{color:var(--red);font-weight:700;min-height:1.4em}
+.hint{font-size:.7em;color:#64748b}
+.ok{color:var(--ok);font-weight:700}
+
+/* Portal Navigation Links */
+.top-nav-bar{position:fixed;top:16px;right:16px;z-index:10;display:flex;gap:8px}
+.portal-chip{display:inline-flex;align-items:center;gap:6px;background:rgba(255,255,255,0.92);backdrop-filter:blur(6px);color:var(--p);text-decoration:none;font-size:0.75em;font-weight:700;padding:8px 14px;border-radius:20px;border:1.5px solid var(--p);box-shadow:0 2px 8px rgba(0,0,0,0.06);transition:all .15s ease}
+.portal-chip:hover{background:var(--p);color:#fff}
+.portal-brand{font-weight:700;font-size:1.1em;color:var(--p)}
+.portal-header-bar{display:flex;justify-content:space-between;align-items:center;padding:12px 24px;border-bottom:1px solid var(--border);background:#fff}
+
+/* Kiosk Doctor Selection Cards */
+.doc-kiosk-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,360px),1fr));gap:2vmin;width:min(100%,850px);margin:1.5vmin 0}
+.doc-kiosk-card{background:#fff;border:3px solid var(--border);border-radius:20px;padding:2.2vmin;display:flex;align-items:center;gap:2vmin;cursor:pointer;text-align:left;transition:all .15s ease;box-shadow:0 4px 12px rgba(0,0,0,0.03)}
+.doc-kiosk-card:hover{border-color:var(--p);transform:translateY(-2px)}
+.doc-kiosk-card.selected{border-color:var(--p);background:var(--pl);box-shadow:0 0 0 3px var(--p) inset}
+.doc-kiosk-avatar{font-size:clamp(40px,6vmin,64px);line-height:1}
+.doc-kiosk-body{display:flex;flex-direction:column;gap:4px;flex:1}
+.doc-kiosk-name{font-size:clamp(18px,2.4vmin,24px);font-weight:700;color:var(--ink)}
+.doc-kiosk-spec{font-size:clamp(13px,1.6vmin,16px);color:var(--mut)}
+.doc-kiosk-chips{display:flex;gap:6px;flex-wrap:wrap;margin:4px 0}
+.doc-kiosk-serving{font-size:0.8em;color:var(--sub)}
+
+/* Badges */
+.badge{display:inline-flex;align-items:center;padding:3px 8px;border-radius:8px;font-size:0.75em;font-weight:700}
+.badge.room{background:#e2e8f0;color:#1e293b}
+.badge.wait{background:#fef3c7;color:#92400e}
+.badge.spec{background:var(--pl);color:var(--p)}
+.badge.active-status{background:var(--okl);color:var(--ok)}
+.badge-danger{background:var(--redl);color:var(--red);font-size:0.72em;padding:3px 8px;border-radius:6px;font-weight:700}
+
+/* SOS & FAB */
+#sos{position:fixed;inset:0;display:none;background:#000c;place-items:center;z-index:99;padding:20px}
+#sos.on{display:grid}
+#sos .card{border:6px solid var(--red);max-width:600px}
+.fab{position:fixed;z-index:5;min-height:52px;font-size:.8em}
+.sosb{top:14px;left:14px;background:var(--red);box-shadow:0 4px 0 #991b1b}
+.lg{bottom:14px;right:14px}
+.bk{bottom:14px;left:14px}
+
+/* ========================================================
+   DOCTOR PORTAL STYLES
+   ======================================================== */
+body.doctor-body{overflow-y:auto;overflow-x:hidden;height:auto;min-height:100vh;background:#f1f5f9;user-select:auto}
+.doctor-login-wrapper{min-height:100vh;display:flex;flex-direction:column}
+.doctor-select-container{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:40px 20px;text-align:center}
+.doctor-select-container .subtitle{max-width:600px;margin:8px 0 32px;color:var(--mut)}
+.doctor-cards-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(320px,1fr));gap:24px;max-width:800px;width:100%}
+.doctor-select-card{background:#fff;border-radius:20px;padding:28px;border:2px solid var(--border);box-shadow:var(--shadow);text-align:left;display:flex;flex-direction:column;gap:16px;cursor:pointer;transition:all .2s ease}
+.doctor-select-card:hover{border-color:var(--p);transform:translateY(-4px);box-shadow:0 12px 28px rgba(14,116,144,0.12)}
+.doc-card-header{display:flex;align-items:center;gap:16px}
+.doc-avatar-large{display:flex;align-items:center;justify-content:center}
+.doc-initials{display:inline-flex;align-items:center;justify-content:center;width:54px;height:54px;border-radius:14px;background:var(--pl);color:var(--p);font-weight:800;font-size:1.2em;letter-spacing:0.04em;border:2px solid rgba(14,116,144,0.2)}
+.doc-monogram-large{display:inline-flex;align-items:center;justify-content:center;width:64px;height:64px;border-radius:16px;background:var(--pl);color:var(--p);font-weight:800;font-size:1.35em;letter-spacing:0.04em;border:2px solid rgba(14,116,144,0.2)}
+.doc-monogram-medium{display:inline-flex;align-items:center;justify-content:center;width:48px;height:48px;border-radius:12px;background:var(--pl);color:var(--p);font-weight:800;font-size:1.1em;letter-spacing:0.04em;border:2px solid rgba(14,116,144,0.2)}
+.doc-monogram-header{display:inline-flex;align-items:center;justify-content:center;width:46px;height:46px;border-radius:12px;background:var(--pl);color:var(--p);font-weight:800;font-size:1.05em;letter-spacing:0.04em;border:2px solid rgba(14,116,144,0.2)}
+.doc-name-large{font-size:1.3em;font-weight:700;color:var(--ink)}
+.doc-spec-badge{font-size:0.8em;color:var(--p);font-weight:600}
+.doc-card-details{background:#f8fafc;border-radius:12px;padding:12px 16px;display:flex;flex-direction:column;gap:8px;font-size:0.85em}
+.doc-detail-row{display:flex;justify-content:space-between;color:var(--mut)}
+.doc-card-alert{background:var(--redl);color:var(--red);padding:8px 12px;border-radius:8px;font-weight:700;font-size:0.85em;text-align:center;animation:pulseRed 1.5s infinite}
+.doc-login-btn{width:100%;margin-top:auto}
+.doc-pin-hint{font-size:0.75em;text-align:center;color:var(--sub)}
+
+/* PIN & SOS Modals */
+#pin-modal, #patient-sos-modal{position:fixed;inset:0;background:rgba(15,23,42,0.7);backdrop-filter:blur(4px);display:none;place-items:center;z-index:999;padding:16px}
+#pin-modal.on, #patient-sos-modal.on{display:grid}
+.pin-modal-card{background:#fff;border-radius:24px;padding:32px;width:min(100%,460px);box-shadow:0 20px 40px rgba(0,0,0,0.2);display:flex;flex-direction:column;align-items:center;text-align:center}
+.pin-modal-header{display:flex;align-items:center;gap:14px;margin-bottom:12px;text-align:left;width:100%}
+.doc-avatar-medium{font-size:36px}
+.pin-slots-wrapper{display:flex;gap:14px;margin:16px 0 20px}
+.pin-digit-slot{width:48px;height:56px;border:3px solid var(--border);border-radius:12px;display:grid;place-items:center;font-size:1.8em;background:#f8fafc;transition:all .15s}
+.pin-digit-slot.filled{border-color:var(--p);background:#fff;color:var(--p)}
+.pin-error-msg{color:var(--red);font-weight:700;font-size:0.85em;margin-bottom:12px;animation:shake 0.3s}
+.pin-pad{width:100%;max-width:320px;gap:10px}
+.pin-pad button{min-height:56px;font-size:1.3em}
+.pin-hint-text{font-size:0.75em;color:var(--sub);margin-top:14px}
+
+/* Doctor Workspace Dashboard */
+.doctor-dashboard-wrapper{min-height:100vh;display:flex;flex-direction:column}
+.doc-dash-header{background:#fff;border-bottom:1px solid var(--border);padding:14px 28px;display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:14px}
+.doc-header-left{display:flex;align-items:center;gap:16px}
+.doc-header-avatar{font-size:38px}
+.doc-header-name{margin:0;font-size:1.3em}
+.doc-header-meta{display:flex;gap:8px;flex-wrap:wrap;margin-top:4px}
+.doc-header-actions{display:flex;align-items:center;gap:10px}
+.doc-switch-btn{background:#fff;color:var(--sub);border:1.5px solid var(--border);box-shadow:none;min-height:42px;padding:0 14px;font-size:0.8em;border-radius:10px}
+.doc-switch-btn:hover{background:#f1f5f9;color:var(--ink)}
+.btn-silence-alarm{background:var(--red);color:#fff;box-shadow:none;min-height:42px;padding:0 16px;font-size:0.8em;border-radius:10px;font-weight:700;cursor:pointer;transition:all .15s}
+.btn-silence-alarm.ringing{animation:pulseRed 1.2s infinite}
+.btn-silence-alarm.idle{background:#fff;color:var(--red);border:1.5px solid var(--red);animation:none}
+.btn-silence-alarm.idle:hover{background:var(--redl)}
+
+.doc-content-container{max-width:1300px;width:100%;margin:0 auto;padding:24px 20px;display:flex;flex-direction:column;gap:20px}
+.doc-stats-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:16px}
+.stat-card{background:#fff;border:1px solid var(--border);border-radius:16px;padding:18px 20px;box-shadow:var(--shadow)}
+.stat-num{font-size:2em;font-weight:700;color:var(--p);line-height:1}
+.stat-label{font-size:0.8em;color:var(--mut);margin-top:6px;font-weight:600}
+.stat-card-danger{background:var(--redl);border-color:var(--red)}
+.stat-card-danger .stat-num{color:var(--red)}
+
+.emergency-alert-banner{background:linear-gradient(135deg,#fee2e2,#fecdd3);border:2px solid var(--red);border-radius:16px;padding:16px 20px;display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:14px;animation:pulseRed 2s infinite}
+.emergency-alert-info{display:flex;align-items:center;gap:14px}
+.emergency-icon-pulse{font-size:32px;animation:heartPulse 1.2s infinite}
+.emergency-title{color:var(--redd);font-weight:800;font-size:1.1em;letter-spacing:0.04em}
+.emergency-desc{font-size:0.9em;color:#1e293b;margin-top:2px}
+.btn-call-emergency{background:var(--red);box-shadow:0 4px 0 var(--redd);min-height:48px}
+
+.doc-main-grid{display:grid;grid-template-columns:1fr 1.35fr;gap:24px}
+@media(max-width:960px){.doc-main-grid{grid-template-columns:1fr}}
+
+/* Active Consultation Card */
+.serving-card{background:#fff;border-radius:20px;padding:26px;border:2px solid var(--p);box-shadow:var(--shadow);display:flex;flex-direction:column;gap:12px;position:relative}
+.serving-emergency{border-color:var(--red);background:#fff5f5}
+.serving-card-badge{display:inline-flex;background:var(--pl);color:var(--p);font-size:0.75em;font-weight:700;padding:4px 10px;border-radius:8px;width:fit-content;text-transform:uppercase;letter-spacing:0.05em}
+.serving-token{font-size:clamp(48px,6vmin,76px);font-weight:800;color:var(--p);line-height:1}
+.serving-patient-name{font-size:1.5em;font-weight:700}
+.serving-patient-meta{font-size:0.9em;color:var(--mut)}
+.serving-symptoms-chips{display:flex;gap:8px;flex-wrap:wrap}
+.chip-sym{background:#f1f5f9;color:var(--ink);padding:4px 10px;border-radius:8px;font-size:0.8em;font-weight:600}
+.chip-danger{background:var(--redl);color:var(--red)}
+.serving-action-row{display:flex;gap:10px;flex-wrap:wrap;margin-top:14px}
+.btn-complete-consultation{background:var(--ok);box-shadow:0 4px 0 #15803d;flex:1.2}
+.btn-call-next{background:var(--p);box-shadow:0 4px 0 var(--pd);flex:1}
+.btn-recall{flex:0.8;box-shadow:none;border:1.5px solid var(--p);min-height:50px}
+.serving-empty{align-items:center;text-align:center;padding:48px 24px;border:2px dashed var(--border)}
+.empty-icon{font-size:48px;margin-bottom:8px}
+
+/* Queue List Panel */
+.queue-panel-card{background:#fff;border-radius:20px;border:1px solid var(--border);box-shadow:var(--shadow);overflow:hidden;display:flex;flex-direction:column}
+.queue-tabs-header{display:flex;border-bottom:2px solid var(--border);background:#f8fafc}
+.queue-tab-btn{flex:1;background:none;box-shadow:none;color:var(--sub);border:0;border-bottom:3px solid transparent;border-radius:0;min-height:54px;font-size:0.95em;font-weight:700}
+.queue-tab-btn.active{color:var(--p);border-bottom-color:var(--p);background:#fff}
+.queue-list-container{display:flex;flex-direction:column;max-height:760px;overflow-y:auto}
+.queue-row{display:flex;align-items:center;padding:20px 24px;gap:18px;min-height:92px;border-bottom:1px solid var(--border);transition:background .15s}
+.queue-row:hover{background:#f8fafc}
+.queue-row-emergency{background:#fff5f5;border-left:6px solid var(--red)}
+.queue-pos-badge{width:52px;height:52px;border-radius:12px;background:#f1f5f9;display:grid;place-items:center;font-weight:800;font-size:1.15em;color:var(--mut);flex-shrink:0;border:1px solid var(--border)}
+.pos-emergency{background:var(--red);color:#fff;border-color:var(--redd)}
+.queue-patient-info{flex:1;display:flex;flex-direction:column;gap:5px;text-align:left}
+.queue-token-name{display:flex;align-items:center;gap:12px;flex-wrap:wrap}
+.queue-token{font-size:1.45em;font-weight:800;color:var(--p);letter-spacing:0.02em}
+.queue-name{font-size:1.25em;font-weight:700;color:var(--ink)}
+.queue-sub-meta{font-size:0.9em;color:var(--mut);line-height:1.4}
+.queue-sub-meta b{color:var(--ink)}
+.queue-time-col{display:flex;align-items:center}
+.queue-wait-time{font-size:0.88em;color:var(--sub);font-weight:700;background:#f1f5f9;padding:6px 12px;border-radius:8px;white-space:nowrap}
+.queue-action-col{display:flex;align-items:center}
+.btn-row-action{min-height:48px;padding:0 22px;font-size:0.92em;font-weight:700;box-shadow:none;border-radius:10px}
+.btn-row-action.emergency{background:var(--red)}
+.completed-row{opacity:0.85}
+.completed-badge{background:var(--okl);color:var(--ok);border-color:#bbf7d0}
+.empty-list-notice{padding:60px 20px;text-align:center;color:var(--mut)}
+.empty-list-notice span{font-size:40px;display:block;margin-bottom:8px}
+
+.clinical-icon-cross{font-size:2.8em;font-weight:300;color:var(--sub);line-height:1;display:inline-block}
+.clinical-spinner-box{display:flex;justify-content:center;align-items:center;margin:12px 0 20px}
+.clinical-spinner{width:46px;height:46px;border:4px solid var(--border);border-top:4px solid var(--p);border-radius:50%;animation:spinClinical 0.85s linear infinite}
+@keyframes spinClinical{0%{transform:rotate(0deg)}100%{transform:rotate(360deg)}}
+.clinical-alert-badge{display:inline-block;background:var(--red);color:#fff;font-size:0.75em;font-weight:800;letter-spacing:0.08em;padding:4px 12px;border-radius:6px;text-transform:uppercase}
+
+/* ========================================================
+   PATIENT MOBILE TRACKER STYLES (Polished Light Theme)
+   ======================================================== */
+body.patient-body{color-scheme:light!important;forced-color-adjust:none!important;overflow-y:auto;height:auto;min-height:100vh;background:#f1f5f9!important;color:#0f172a!important;user-select:auto}
+.patient-wrapper{color-scheme:light!important;forced-color-adjust:none!important;max-width:480px;margin:0 auto;min-height:100vh;display:flex;flex-direction:column;background:#ffffff!important;color:#0f172a!important;border-left:1px solid #e2e8f0;border-right:1px solid #e2e8f0;box-shadow:0 10px 30px -5px rgba(15,23,42,0.06);padding-bottom:24px}
+.patient-header-bar{padding:16px 20px;display:flex;justify-content:space-between;align-items:center;border-bottom:1px solid #f1f5f9;background:#ffffff!important;color:#0f172a!important;position:sticky;top:0;z-index:10}
+.patient-header-right{display:flex;align-items:center;gap:6px;background:#f0fdf4;border:1px solid #bbf7d0;padding:4px 10px;border-radius:20px}
+.live-dot-pulse{width:7px;height:7px;border-radius:50%;background:var(--ok);box-shadow:0 0 0 3px rgba(22,163,74,0.25);animation:pulseDot 1.5s infinite}
+.patient-content-container{padding:18px 20px;display:flex;flex-direction:column;gap:16px}
+
+.patient-card{color-scheme:light!important;forced-color-adjust:none!important;background:#ffffff!important;color:#0f172a!important;border:1px solid #e2e8f0;border-radius:20px;padding:20px;box-shadow:0 2px 12px -2px rgba(15,23,42,0.04)}
+.patient-token-hero{display:flex;flex-direction:column;align-items:center;background:linear-gradient(180deg,#f8fafc 0%,#f1f5f9 100%)!important;border:1px solid #e2e8f0;border-radius:16px;padding:18px 14px;margin-bottom:16px}
+.patient-token-label{font-size:0.72em;font-weight:700;color:#64748b!important;letter-spacing:0.1em;text-transform:uppercase}
+.patient-token-number{font-size:clamp(48px,11vw,64px);font-weight:800;color:var(--p)!important;letter-spacing:0.03em;line-height:1.1;margin:4px 0}
+
+.patient-meta-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;text-align:left}
+.meta-item{background:#f8fafc!important;border:1px solid #f1f5f9;padding:10px 12px;border-radius:12px;display:flex;flex-direction:column;gap:2px}
+.meta-label{font-size:0.68em;color:#64748b;font-weight:700;text-transform:uppercase;letter-spacing:0.03em}
+.meta-val{font-size:0.88em;font-weight:700;color:#0f172a}
+.highlight-val{color:var(--p);font-weight:800}
+
+.patient-status-card{border-radius:20px;padding:22px 18px;text-align:center;display:flex;flex-direction:column;align-items:center;gap:10px}
+.status-serving{background:#ecfdf5;border:2px solid var(--ok);box-shadow:0 8px 24px -4px rgba(22,163,74,0.18);animation:pulseServing 2.5s infinite}
+.status-pulse-badge{background:var(--ok);color:#fff;font-size:0.75em;font-weight:800;letter-spacing:0.06em;padding:6px 16px;border-radius:20px;text-transform:uppercase;animation:heartPulse 1.2s infinite}
+.room-highlight-box{background:#fff;border:2.5px solid var(--ok);padding:10px 26px;border-radius:14px;font-size:1.45em;font-weight:800;color:var(--ok);box-shadow:0 4px 14px rgba(22,163,74,0.15)}
+
+.status-waiting{background:#f0f9ff;border:1.5px solid #bae6fd;box-shadow:0 4px 16px -2px rgba(14,116,144,0.06)}
+.status-pill{background:#fff;color:var(--p);font-size:0.72em;font-weight:800;text-transform:uppercase;letter-spacing:0.04em;padding:5px 14px;border-radius:14px;border:1px solid #7dd3fc}
+.status-pill-ok{color:var(--ok);border-color:#86efac}
+.status-big-title{margin:4px 0;font-size:clamp(20px,4.5vw,24px);font-weight:800;color:#0f172a}
+.queue-eta-badge{background:#fff;padding:7px 18px;border-radius:12px;font-size:0.85em;color:var(--p);font-weight:700;border:1px solid #e0f2fe;box-shadow:0 2px 6px rgba(14,116,144,0.05)}
+.status-desc{font-size:0.82em;color:#475569;max-width:380px;line-height:1.45}
+
+.status-completed{background:#f8fafc;border:1.5px solid #e2e8f0;border-radius:20px}
+
+.patient-sos-container{background:#fff5f5;border:1.5px solid #fecdd3;border-radius:18px;padding:16px;text-align:center}
+.patient-sos-btn{background:var(--red);box-shadow:0 4px 0 var(--redd);width:100%;min-height:52px;font-size:0.85em;font-weight:800;letter-spacing:0.02em;border-radius:14px}
+
+.patient-token-field{width:100%;height:60px;border:2.5px solid var(--p);border-radius:14px;font-size:1.5em;font-weight:800;text-align:center;letter-spacing:0.1em;text-transform:uppercase;color:var(--p);outline:none;margin-bottom:14px;background:#f8fafc}
+.patient-footer-row{display:flex;justify-content:center;align-items:center;margin-top:6px}
+.text-btn{background:none;border:none;box-shadow:none;color:#64748b;cursor:pointer;padding:8px 16px;font-size:0.82em;font-weight:600;text-decoration:underline}
+
+.sound-alert-banner{transition:all 0.2s ease;user-select:none}
+.sound-alert-banner:active{transform:scale(0.98)}
+
+/* Vitals Screen & Components */
+.vitals-display-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:clamp(8px,1.5vmin,16px);width:100%;max-width:680px;margin:1vmin 0}
+.vital-card{background:#fff;border:2px solid #e2e8f0;border-radius:var(--r);padding:clamp(12px,2vmin,20px);display:flex;flex-direction:column;align-items:center;gap:4px;box-shadow:0 4px 12px rgba(15,23,42,0.04);transition:all .2s ease}
+.vital-card.fever-card{border-color:var(--red);background:#fff5f5;animation:pulseRed 2s infinite}
+.vital-card.hypoxia-card{border-color:#f59e0b;background:#fffbeb;animation:pulseRed 2s infinite}
+.vital-label{font-size:clamp(12px,1.4vmin,15px);font-weight:700;color:var(--mut);text-transform:uppercase;letter-spacing:0.04em}
+.vital-value-row{display:flex;align-items:baseline;gap:4px;margin:4px 0}
+.vital-num{font-size:clamp(32px,4.5vmin,48px);font-weight:800;color:var(--ink);line-height:1}
+.vital-unit{font-size:clamp(14px,1.8vmin,18px);font-weight:700;color:var(--mut)}
+.vital-status-pill{font-size:clamp(11px,1.2vmin,13px);font-weight:700;padding:3px 10px;border-radius:12px;text-transform:uppercase}
+.pill-ok{background:#ecfdf5;color:var(--ok);border:1px solid #bbf7d0}
+.pill-danger{background:#fef2f2;color:var(--red);border:1px solid #fecdd3}
+.pill-warn{background:#fffbeb;color:#b45309;border:1px solid #fde68a}
+.pill-neutral{background:#f1f5f9;color:#475569;border:1px solid #e2e8f0}
+.vitals-live-sensor-bar{display:inline-flex;align-items:center;gap:8px;padding:6px 16px;border-radius:20px;background:#f0fdf4;border:1px solid #bbf7d0;font-size:clamp(12px,1.4vmin,14px);font-weight:700;color:var(--ok);margin:0.5vmin 0}
+.doc-vitals-badge{display:inline-flex;align-items:center;gap:12px;background:#f8fafc;border:1.5px solid #cbd5e1;padding:8px 14px;border-radius:10px;font-size:0.85em;margin:6px 0}
+.doc-vitals-item{display:flex;align-items:center;gap:4px}
+.doc-vitals-fever{background:#fef2f2!important;border-color:#f87171!important;color:#991b1b!important}
+.doc-vitals-hypoxia{background:#fffbeb!important;border-color:#fbbf24!important;color:#92400e!important}
+
+/* 2-Phase Guided Scanner & Secret Staff Drawer */
+.vitals-tutorial-box{width:100%;max-width:580px;background:#fff;border:2px solid #e2e8f0;border-radius:20px;padding:clamp(16px,2.5vmin,24px);box-shadow:0 8px 24px rgba(15,23,42,0.06);margin:1vmin 0;display:flex;flex-direction:column;align-items:center;text-align:center}
+.vitals-svg-wrap{width:100%;max-width:260px;height:120px;margin:8px 0;display:flex;justify-content:center;align-items:center}
+.vitals-tutorial-svg{width:100%;height:100%;max-height:120px}
+.vitals-tutorial-title{font-size:clamp(16px,2vmin,20px);font-weight:800;color:var(--ink);margin:4px 0}
+.vitals-tutorial-desc{font-size:clamp(13px,1.5vmin,16px);color:#334155;line-height:1.4;margin:6px 0 12px;max-width:440px}
+.vitals-tutorial-hint{font-size:clamp(11px,1.2vmin,13px);color:var(--mut);font-weight:600;margin-bottom:12px}
+
+.btn-ready-scan{background:linear-gradient(135deg,var(--p) 0%,#0369a1 100%)!important;color:#fff!important;border:none!important;border-radius:14px!important;padding:clamp(12px,1.8vmin,18px) clamp(24px,3.5vmin,36px)!important;font-size:clamp(17px,2.2vmin,22px)!important;font-weight:800!important;box-shadow:0 6px 16px rgba(2,132,199,0.25)!important;cursor:pointer;width:100%;max-width:420px;margin-top:6px;transition:all .15s ease}
+.btn-ready-scan:hover{transform:translateY(-2px);box-shadow:0 8px 20px rgba(2,132,199,0.35)!important}
+.btn-ready-scan:active{transform:scale(0.98)}
+
+/* Ultrasonic Real-Time Alignment Guide */
+.ultrasonic-meter-card{width:100%;max-width:520px;background:#f8fafc;border:2px solid #e2e8f0;border-radius:16px;padding:12px 16px;margin:10px 0 14px;box-shadow:inset 0 1px 3px rgba(0,0,0,0.03)}
+.ultrasonic-header{display:flex;justify-content:space-between;align-items:center;margin-bottom:8px}
+.ultrasonic-title{font-size:clamp(11px,1.3vmin,13px);font-weight:800;color:#475569;text-transform:uppercase;letter-spacing:0.04em}
+.dist-val-badge{font-size:clamp(13px,1.6vmin,16px);font-weight:900;padding:3px 12px;border-radius:20px;letter-spacing:0.02em}
+
+.dist-badge-ok{background:#ecfdf5;color:var(--ok);border:1.5px solid #86efac;box-shadow:0 0 10px rgba(22,163,74,0.25)}
+.dist-badge-warn{background:#fffbeb;color:#b45309;border:1.5px solid #fde68a}
+.dist-badge-danger{background:#fef2f2;color:var(--red);border:1.5px solid #fecdd3}
+.dist-badge-wait{background:#f1f5f9;color:#475569;border:1.5px solid #cbd5e1}
+
+.hw-status-pill{display:inline-flex;align-items:center;justify-content:center;gap:7px;padding:4px 12px;border-radius:999px;font-size:clamp(10px,1.2vmin,12px);font-weight:800;letter-spacing:0.03em;margin:0 auto 10px auto}
+.hw-status-pill.live{background:#ecfdf5;color:#15803d;border:1px solid #86efac}
+.hw-status-pill.wait{background:#fffbeb;color:#b45309;border:1px solid #fde68a}
+
+.hw-telemetry-strip{display:grid;grid-template-columns:repeat(auto-fit,minmax(105px,1fr));gap:8px;margin-top:10px;padding-top:10px;border-top:1px dashed #cbd5e1}
+.hw-telemetry-item{background:#fff;border:1px solid #e2e8f0;border-radius:10px;padding:6px 10px;display:flex;flex-direction:column;gap:2px;text-align:center}
+.hw-telemetry-item span{font-size:10px;font-weight:700;color:#64748b;letter-spacing:0.04em}
+.hw-telemetry-item b{font-size:clamp(12px,1.4vmin,14px);font-weight:800;color:var(--ink);font-variant-numeric:tabular-nums}
+
+.dist-status-text{font-size:clamp(13px,1.6vmin,16px);font-weight:800;margin:6px 0 10px;text-align:center}
+
+.dist-track-wrap{position:relative;width:100%;height:22px;background:#e2e8f0;border-radius:12px;overflow:hidden;margin:8px 0 10px;display:flex}
+.dist-zone-close{width:15%;height:100%;background:#fef3c7;border-right:1px solid #cbd5e1;position:relative}
+.dist-zone-target{width:15%;height:100%;background:#bbf7d0;border-right:1px solid #86efac;position:relative;box-shadow:inset 0 0 6px rgba(22,163,74,0.3)}
+.dist-zone-far{width:45%;height:100%;background:#fed7aa;border-right:1px solid #cbd5e1}
+.dist-zone-out{width:25%;height:100%;background:#fecaca}
+.light-zone-seal{width:25%;height:100%;background:#bbf7d0;border-right:1px solid #86efac;position:relative;box-shadow:inset 0 0 6px rgba(22,163,74,0.3)}
+.light-zone-dim{width:30%;height:100%;background:#fef3c7;border-right:1px solid #cbd5e1}
+.light-zone-bright{width:45%;height:100%;background:#fecaca}
+
+.dist-needle{position:absolute;top:0;bottom:0;width:4px;background:#0f172a;border-radius:2px;transform:translateX(-50%);transition:left 0.25s ease;box-shadow:0 0 6px rgba(0,0,0,0.4);z-index:2}
+.dist-target-marker{position:absolute;top:2px;left:22.5%;transform:translateX(-50%);font-size:9px;font-weight:900;color:#166534;letter-spacing:0.04em}
+
+.dist-preset-bar{display:flex;flex-wrap:wrap;justify-content:center;gap:6px;margin-top:8px}
+.dist-chip-btn{background:#fff;border:1.5px solid #cbd5e1;border-radius:8px;padding:4px 10px;font-size:clamp(11px,1.2vmin,12px);font-weight:700;color:#334155;cursor:pointer;transition:all 0.15s ease}
+.dist-chip-btn:hover{border-color:var(--p);color:var(--p)}
+.dist-chip-btn.active{background:var(--p);border-color:var(--p);color:#fff}
+
+.btn-ready-scan.locked{background:linear-gradient(135deg,var(--ok) 0%,#15803d 100%)!important;box-shadow:0 6px 18px rgba(22,163,74,0.35)!important;animation:pulseServing 1.8s infinite}
+.btn-ready-scan.disabled-align{background:#94a3b8!important;box-shadow:none!important;cursor:not-allowed;opacity:0.88}
+
+.vitals-countdown-box{width:100%;max-width:580px;background:#fff;border:2px solid #e2e8f0;border-radius:20px;padding:clamp(20px,3vmin,32px);box-shadow:0 8px 24px rgba(15,23,42,0.06);margin:1.5vmin 0;display:flex;flex-direction:column;align-items:center;text-align:center}
+.countdown-hero-circle{width:clamp(90px,12vmin,120px);height:clamp(90px,12vmin,120px);border-radius:50%;background:linear-gradient(135deg,#eff6ff 0%,#e0f2fe 100%);border:4px solid var(--p);display:flex;justify-content:center;align-items:center;margin:12px 0;box-shadow:0 0 0 8px rgba(2,132,199,0.12);animation:countdownPop 1s ease-in-out infinite}
+.countdown-digit{font-size:clamp(48px,7vmin,64px);font-weight:900;color:var(--p);line-height:1}
+.countdown-submsg{font-size:clamp(14px,1.8vmin,18px);font-weight:700;color:var(--ink);margin:8px 0 4px}
+.countdown-indicator-bar{width:100%;max-width:320px;height:6px;background:#e2e8f0;border-radius:4px;overflow:hidden;margin-top:14px}
+.countdown-indicator-fill{height:100%;background:var(--p);border-radius:4px;transition:width 0.9s linear}
+
+.vitals-recorded-pill{display:inline-flex;align-items:center;gap:6px;background:#f0fdf4;border:1.5px solid #86efac;color:var(--ok);font-size:clamp(12px,1.4vmin,14px);font-weight:700;padding:6px 14px;border-radius:20px;margin-bottom:10px}
+
+.vitals-scanning-box{width:100%;max-width:580px;background:#fff;border:2px solid #e2e8f0;border-radius:18px;padding:clamp(16px,2.5vmin,24px);box-shadow:0 8px 24px rgba(15,23,42,0.06);margin:1.5vmin 0;display:flex;flex-direction:column;align-items:center;text-align:center}
+.scanning-step-badge{background:var(--pl);color:var(--p);font-weight:800;font-size:0.8em;padding:4px 14px;border-radius:20px;text-transform:uppercase;letter-spacing:0.06em;margin-bottom:8px}
+.scanning-bar-track{width:100%;height:8px;background:#e2e8f0;border-radius:6px;overflow:hidden;margin:12px 0 6px}
+.scanning-bar-fill{height:100%;background:linear-gradient(90deg,var(--p),var(--ok));border-radius:6px;transition:width 0.3s ease}
+.secret-staff-panel{width:100%;max-width:680px;background:#f8fafc;border:2px dashed #94a3b8;border-radius:16px;padding:14px;margin-top:1.5vmin;animation:slideDown 0.25s ease}
+.secret-staff-header{display:flex;justify-content:space-between;align-items:center;margin-bottom:10px}
+.secret-staff-badge{font-size:0.75em;font-weight:800;background:#0f172a;color:#fff;padding:3px 10px;border-radius:6px;letter-spacing:0.05em}
+.secret-preset-btn{background:#fff;border:1.5px solid #cbd5e1;color:var(--ink);min-height:42px;border-radius:10px;font-size:0.8em;font-weight:700;padding:6px 14px;cursor:pointer;box-shadow:0 2px 4px rgba(0,0,0,0.04);transition:all .15s ease}
+.secret-preset-btn:hover{border-color:var(--p);color:var(--p);transform:translateY(-1px)}
+@keyframes slideDown{from{opacity:0;transform:translateY(-10px)}to{opacity:1;transform:translateY(0)}}
+@keyframes countdownPop{0%{transform:scale(1)}50%{transform:scale(1.04)}100%{transform:scale(1)}}
+
+/* Standby / Screensaver Idle Screen */
+.standby-wrap{display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;width:100%;max-width:920px;padding:clamp(16px,3vmin,32px);margin:0 auto;cursor:pointer;animation:fadeIn 0.3s ease}
+.standby-badge{display:inline-flex;align-items:center;gap:8px;background:var(--pl);color:var(--p);font-size:clamp(11px,1.3vmin,13px);font-weight:800;letter-spacing:0.08em;padding:6px 16px;border-radius:20px;text-transform:uppercase;margin-bottom:14px}
+.standby-radar-container{position:relative;width:150px;height:150px;margin:2vmin auto;display:flex;align-items:center;justify-content:center}
+.standby-radar-ring{position:absolute;border-radius:50%;border:2px solid var(--p);opacity:0;animation:radarWave 2.8s cubic-bezier(0.2,0.8,0.2,1) infinite}
+.standby-radar-ring:nth-child(2){animation-delay:0.9s}
+.standby-radar-ring:nth-child(3){animation-delay:1.8s}
+.standby-radar-core{position:relative;z-index:2;width:76px;height:76px;border-radius:50%;background:linear-gradient(135deg,var(--p),#0284c7);display:flex;flex-direction:column;align-items:center;justify-content:center;color:#fff;font-size:11px;font-weight:800;box-shadow:0 8px 24px rgba(14,165,233,0.35);letter-spacing:0.04em;transition:all 0.3s ease}
+.standby-radar-core.motion-active{background:linear-gradient(135deg,var(--ok),#059669);box-shadow:0 8px 24px rgba(22,163,74,0.4)}
+.standby-prompt-card{width:100%;max-width:620px;background:#fff;border:2px solid #e2e8f0;border-radius:24px;padding:clamp(20px,3vmin,32px);box-shadow:0 12px 36px rgba(15,23,42,0.08);margin:2vmin auto}
+.standby-prompt-main{font-size:clamp(22px,3.2vmin,32px);font-weight:800;color:var(--ink);margin-bottom:8px}
+.standby-prompt-sub{font-size:clamp(14px,1.8vmin,17px);color:var(--mut);margin-bottom:20px}
+.standby-wake-btn{width:100%;max-width:400px;height:clamp(54px,7vmin,64px);font-size:clamp(16px,2vmin,20px);font-weight:800;background:var(--p);color:#fff;border-radius:16px;box-shadow:0 6px 20px rgba(14,165,233,0.35);transition:all .15s ease}
+.standby-wake-btn:hover{transform:translateY(-2px);box-shadow:0 8px 26px rgba(14,165,233,0.45)}
+.standby-sensor-note{display:inline-flex;align-items:center;gap:8px;font-size:clamp(12px,1.4vmin,14px);font-weight:700;color:var(--mut);background:#f1f5f9;padding:6px 14px;border-radius:20px;margin-top:14px}
+.standby-sensor-dot{width:10px;height:10px;border-radius:50%;background:var(--ok);box-shadow:0 0 0 3px rgba(22,163,74,0.2);animation:pulseDot 1.8s infinite}
+@keyframes radarWave{0%{width:76px;height:76px;opacity:0.8}100%{width:170px;height:170px;opacity:0}}
+@keyframes fadeIn{from{opacity:0;transform:scale(0.98)}to{opacity:1;transform:scale(1)}}
+
+/* Animations */
+@keyframes pulseRed{0%,100%{opacity:1}50%{opacity:0.8}}
+@keyframes heartPulse{0%,100%{transform:scale(1)}50%{transform:scale(1.05)}}
+@keyframes pulseDot{0%,100%{transform:scale(1);opacity:1}50%{transform:scale(1.4);opacity:0.4}}
+@keyframes pulseServing{0%,100%{box-shadow:0 0 0 0 rgba(22,163,74,0.3)}50%{box-shadow:0 0 0 10px rgba(22,163,74,0)}}
+@keyframes shake{0%,100%{transform:translateX(0)}25%{transform:translateX(-6px)}75%{transform:translateX(6px)}}
+
+/* Print rules */
+@media print{body *{visibility:hidden}.slip,.slip *{visibility:visible}.slip{position:absolute;left:0;top:0;width:72mm;font-size:14pt;text-align:center}.slip .tok{font-size:48pt}}
+@media (prefers-reduced-motion:reduce){*{transition:none!important;animation:none!important}}
+
+/* Secret Doctor Simulation Controls */
+.doc-secret-panel{background:#ffffff;border:2px dashed #0284c7;border-radius:14px;padding:14px 18px;margin-bottom:20px;box-shadow:0 4px 14px rgba(2,132,199,0.08);animation:slideDown 0.25s ease}
+.doc-secret-header{display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;flex-wrap:wrap;gap:8px}
+.doc-secret-badge{font-size:0.75rem;font-weight:800;background:#0284c7;color:#ffffff;padding:3px 10px;border-radius:6px;letter-spacing:0.04em}
+.doc-secret-sub{font-size:0.8rem;color:#64748b;font-weight:600}
+.doc-secret-close-btn{background:#f1f5f9;border:1px solid #cbd5e1;color:#334155;border-radius:6px;padding:4px 10px;font-size:0.8rem;font-weight:700;cursor:pointer;transition:all 0.15s ease}
+.doc-secret-close-btn:hover{background:#e2e8f0;color:#0f172a}
+.doc-secret-actions{display:flex;flex-wrap:wrap;gap:10px}
+.doc-secret-btn{background:#f0f9ff;border:1.5px solid #bae6fd;color:#0369a1;border-radius:8px;padding:8px 14px;font-size:0.82rem;font-weight:700;cursor:pointer;transition:all 0.15s ease}
+.doc-secret-btn:hover{background:#e0f2fe;border-color:#0284c7;transform:translateY(-1px)}
+.doc-secret-btn-danger{background:#fef2f2;border-color:#fecaca;color:#b91c1c}
+.doc-secret-btn-danger:hover{background:#fee2e2;border-color:#ef4444}
+.doc-secret-btn-alt{background:#f8fafc;border-color:#cbd5e1;color:#475569}
+.doc-secret-btn-alt:hover{background:#f1f5f9;border-color:#94a3b8}
+
+/* Bypass Mobile Chrome & Android Force-Darkening Heuristic */
+@media (prefers-color-scheme: dark){
+  *,*::before,*::after{forced-color-adjust:none!important;-webkit-forced-color-adjust:none!important}
+  :root,html,body,body.patient-body,body.doctor-body{color-scheme:light!important;background-color:#f1f5f9!important;background:#f1f5f9!important;color:#0f172a!important}
+  .patient-wrapper{background-color:#ffffff!important;background:#ffffff!important;color:#0f172a!important}
+  .patient-card,.patient-header-bar{background-color:#ffffff!important;background:#ffffff!important;color:#0f172a!important}
+  .patient-token-hero,.meta-item{background-color:#f8fafc!important;background:#f8fafc!important;color:#0f172a!important}
+  .status-waiting{background:#f0f9ff!important;border-color:#bae6fd!important;color:#0f172a!important}
+  .status-serving{background:#ecfdf5!important;border-color:#10b981!important;color:#0f172a!important}
+  .status-completed{background:#f8fafc!important;border-color:#e2e8f0!important;color:#0f172a!important}
+  .room-highlight-box{background:#ffffff!important;color:#16a34a!important}
+  .patient-sos-container{background:#fff5f5!important;border-color:#fecdd3!important}
+  .status-big-title,.status-desc,.meta-val,.meta-label,.patient-token-label{color:#0f172a!important}
+  .status-desc{color:#475569!important}
+  .meta-label{color:#64748b!important}
+  .patient-token-number{color:var(--p)!important}
+}

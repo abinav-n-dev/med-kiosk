@@ -1,0 +1,104 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1,user-scalable=no">
+  <meta name="color-scheme" content="light only">
+  <meta name="theme-color" content="#ffffff">
+  <meta name="supported-color-schemes" content="light">
+  <title>MediCore Clinic - Live Patient Queue Tracker</title>
+  <style>
+    *, *::before, *::after {
+      forced-color-adjust: none !important;
+      -webkit-forced-color-adjust: none !important;
+    }
+    :root, html, body {
+      color-scheme: light only !important;
+      supported-color-schemes: light !important;
+      background-color: #f1f5f9 !important;
+      background: #f1f5f9 !important;
+      color: #0f172a !important;
+    }
+    .patient-wrapper {
+      background-color: #ffffff !important;
+      background: #ffffff !important;
+      color: #0f172a !important;
+    }
+    .patient-card, .patient-header-bar {
+      background-color: #ffffff !important;
+      background: #ffffff !important;
+      color: #0f172a !important;
+    }
+    .patient-token-hero, .meta-item {
+      background-color: #f8fafc !important;
+      background: #f8fafc !important;
+      color: #0f172a !important;
+    }
+
+    /* Bypass Chrome Android & Samsung Auto-Darkening */
+    @media (prefers-color-scheme: dark) {
+      *, *::before, *::after {
+        forced-color-adjust: none !important;
+        -webkit-forced-color-adjust: none !important;
+      }
+      :root, html, body, body.patient-body {
+        color-scheme: light !important;
+        background-color: #f1f5f9 !important;
+        background: #f1f5f9 !important;
+        color: #0f172a !important;
+      }
+      .patient-wrapper {
+        background-color: #ffffff !important;
+        background: #ffffff !important;
+        color: #0f172a !important;
+      }
+      .patient-card, .patient-header-bar {
+        background-color: #ffffff !important;
+        background: #ffffff !important;
+        color: #0f172a !important;
+      }
+      .patient-token-hero, .meta-item {
+        background-color: #f8fafc !important;
+        background: #f8fafc !important;
+        color: #0f172a !important;
+      }
+      .status-waiting {
+        background: #f0f9ff !important;
+        border-color: #bae6fd !important;
+      }
+      .status-serving {
+        background: #ecfdf5 !important;
+        border-color: #10b981 !important;
+      }
+      .status-completed {
+        background: #f8fafc !important;
+        border-color: #e2e8f0 !important;
+      }
+      .patient-sos-container {
+        background: #fff5f5 !important;
+        border-color: #fecdd3 !important;
+      }
+      .status-big-title, .status-desc, .meta-val, .meta-label, .patient-token-label {
+        color: #0f172a !important;
+      }
+      .patient-token-number {
+        color: #0e7490 !important;
+      }
+      .status-desc {
+        color: #475569 !important;
+      }
+      .meta-label {
+        color: #64748b !important;
+      }
+    }
+  </style>
+  <link rel="stylesheet" href="/shared/ui.css?v=19.0">
+</head>
+<body class="patient-body">
+  <div id="patient-app"></div>
+  <div id="patient-sos-modal"></div>
+  <script src="/vendor/mqtt.min.js"></script>
+  <script type="module" src="/shared/patient.js?v=22.0"></script>
+</body>
+</html>
+

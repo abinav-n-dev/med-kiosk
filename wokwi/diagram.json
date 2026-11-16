@@ -1,0 +1,433 @@
+{
+  "version": 1,
+  "author": "TriageQ Smart Clinic - Clean 4-Sensor Breadboard Schematic",
+  "editor": "wokwi",
+  "parts": [
+    {
+      "type": "wokwi-breadboard",
+      "id": "bb1",
+      "top": 250,
+      "left": -160,
+      "attrs": {}
+    },
+    {
+      "type": "board-esp32-devkit-c-v4",
+      "id": "esp",
+      "top": -60,
+      "left": 60,
+      "attrs": {}
+    },
+    {
+      "type": "wokwi-text",
+      "id": "lbl_esp",
+      "top": -95,
+      "left": 40,
+      "attrs": {
+        "text": "ESP32 DEVKIT V4 (MAIN CONTROLLER)"
+      }
+    },
+    {
+      "type": "wokwi-lcd2004",
+      "id": "lcd1",
+      "top": -180,
+      "left": 280,
+      "attrs": {
+        "pins": "i2c",
+        "background": "blue"
+      }
+    },
+    {
+      "type": "wokwi-text",
+      "id": "lbl_lcd",
+      "top": -215,
+      "left": 300,
+      "attrs": {
+        "text": "20x4 I2C LCD DISPLAY (0x27)"
+      }
+    },
+    {
+      "type": "wokwi-pir-motion-sensor",
+      "id": "pir1",
+      "top": -180,
+      "left": -260,
+      "attrs": {
+        "delayTime": "5"
+      }
+    },
+    {
+      "type": "wokwi-text",
+      "id": "lbl_pir",
+      "top": -215,
+      "left": -280,
+      "attrs": {
+        "text": "SENSOR 4: HC-SR501 PIR MOTION\n(OUT: GPIO 27, 5V, GND)"
+      }
+    },
+    {
+      "type": "wokwi-ntc-temperature-sensor",
+      "id": "temp_sensor",
+      "top": 0,
+      "left": -240,
+      "attrs": {
+        "temperature": "37",
+        "beta": "3950"
+      }
+    },
+    {
+      "type": "wokwi-text",
+      "id": "lbl_temp",
+      "top": -35,
+      "left": -260,
+      "attrs": {
+        "text": "SENSOR 1: MLX90614 BODY TEMP\n(OUT: GPIO 34, 3.3V, GND)"
+      }
+    },
+    {
+      "type": "wokwi-slide-switch",
+      "id": "spo2_sw",
+      "top": 140,
+      "left": -200,
+      "attrs": {}
+    },
+    {
+      "type": "wokwi-text",
+      "id": "lbl_spo2",
+      "top": 110,
+      "left": -230,
+      "attrs": {
+        "text": "SENSOR 2: MAX30102 SpO2 MODE\n(GPIO 26 & GND: Normal vs Low O2)"
+      }
+    },
+    {
+      "type": "wokwi-hc-sr04",
+      "id": "sonar1",
+      "top": 60,
+      "left": 320,
+      "attrs": {
+        "distance": "4"
+      }
+    },
+    {
+      "type": "wokwi-text",
+      "id": "lbl_sonar",
+      "top": 25,
+      "left": 300,
+      "attrs": {
+        "text": "SENSOR 3: HC-SR04 ULTRASONIC\n(TRIG: 5, ECHO: 19, 5V, GND)"
+      }
+    },
+    {
+      "type": "wokwi-pushbutton",
+      "id": "btn_mute",
+      "top": 310,
+      "left": -110,
+      "attrs": {
+        "color": "green",
+        "label": "STOP BUZZER"
+      }
+    },
+    {
+      "type": "wokwi-text",
+      "id": "lbl_mute",
+      "top": 375,
+      "left": -125,
+      "attrs": {
+        "text": "STOP BUZZER\n(GPIO 14 & GND)"
+      }
+    },
+    {
+      "type": "wokwi-pushbutton",
+      "id": "btn1",
+      "top": 310,
+      "left": 20,
+      "attrs": {
+        "color": "red",
+        "label": "KIOSK SOS"
+      }
+    },
+    {
+      "type": "wokwi-text",
+      "id": "lbl_sos",
+      "top": 375,
+      "left": 5,
+      "attrs": {
+        "text": "KIOSK SOS\n(GPIO 13 & GND)"
+      }
+    },
+    {
+      "type": "wokwi-led",
+      "id": "led1",
+      "top": 300,
+      "left": 140,
+      "attrs": {
+        "color": "red",
+        "label": "EMERGENCY"
+      }
+    },
+    {
+      "type": "wokwi-resistor",
+      "id": "r1",
+      "top": 360,
+      "left": 140,
+      "attrs": {
+        "value": "220"
+      }
+    },
+    {
+      "type": "wokwi-text",
+      "id": "lbl_led",
+      "top": 410,
+      "left": 115,
+      "attrs": {
+        "text": "ALARM LED\n(GPIO 2 via 220R)"
+      }
+    },
+    {
+      "type": "wokwi-buzzer",
+      "id": "bz1",
+      "top": 300,
+      "left": 240,
+      "attrs": {
+        "volume": "0.8"
+      }
+    },
+    {
+      "type": "wokwi-text",
+      "id": "lbl_bz",
+      "top": 375,
+      "left": 225,
+      "attrs": {
+        "text": "ALARM BUZZER\n(GPIO 18 & GND)"
+      }
+    }
+  ],
+  "connections": [
+    [
+      "lcd1:GND",
+      "esp:GND.2",
+      "black",
+      [
+        "h-30",
+        "v80"
+      ]
+    ],
+    [
+      "lcd1:SCL",
+      "esp:22",
+      "yellow",
+      [
+        "h-45",
+        "v110"
+      ]
+    ],
+    [
+      "lcd1:SDA",
+      "esp:21",
+      "blue",
+      [
+        "h-60",
+        "v140"
+      ]
+    ],
+    [
+      "lcd1:VCC",
+      "esp:5V",
+      "red",
+      [
+        "v-30",
+        "h-260",
+        "v300"
+      ]
+    ],
+    [
+      "sonar1:TRIG",
+      "esp:5",
+      "purple",
+      [
+        "h-60",
+        "v-30"
+      ]
+    ],
+    [
+      "sonar1:ECHO",
+      "esp:19",
+      "cyan",
+      [
+        "h-80",
+        "v-50"
+      ]
+    ],
+    [
+      "sonar1:GND",
+      "esp:GND.2",
+      "black",
+      [
+        "h-100",
+        "v-150"
+      ]
+    ],
+    [
+      "sonar1:VCC",
+      "esp:5V",
+      "red",
+      [
+        "v50",
+        "h-230",
+        "v-10"
+      ]
+    ],
+    [
+      "pir1:OUT",
+      "esp:27",
+      "limegreen",
+      [
+        "h70",
+        "v210"
+      ]
+    ],
+    [
+      "pir1:VCC",
+      "esp:5V",
+      "red",
+      [
+        "h50",
+        "v280"
+      ]
+    ],
+    [
+      "pir1:GND",
+      "esp:GND.1",
+      "black",
+      [
+        "h30",
+        "v250"
+      ]
+    ],
+    [
+      "temp_sensor:VCC",
+      "esp:3V3",
+      "orange",
+      [
+        "h110",
+        "v-80"
+      ]
+    ],
+    [
+      "temp_sensor:OUT",
+      "esp:34",
+      "violet",
+      [
+        "h130",
+        "v-40"
+      ]
+    ],
+    [
+      "temp_sensor:GND",
+      "esp:GND.1",
+      "black",
+      [
+        "h90",
+        "v100"
+      ]
+    ],
+    [
+      "spo2_sw:2",
+      "esp:26",
+      "deepskyblue",
+      [
+        "h110",
+        "v-50"
+      ]
+    ],
+    [
+      "spo2_sw:3",
+      "esp:GND.1",
+      "black",
+      [
+        "h80",
+        "v-20"
+      ]
+    ],
+    [
+      "btn_mute:1.l",
+      "esp:14",
+      "green",
+      [
+        "v-60",
+        "h130"
+      ]
+    ],
+    [
+      "btn_mute:2.l",
+      "esp:GND.1",
+      "black",
+      [
+        "v-40",
+        "h120"
+      ]
+    ],
+    [
+      "btn1:1.l",
+      "esp:13",
+      "coral",
+      [
+        "v-60",
+        "h130"
+      ]
+    ],
+    [
+      "btn1:2.l",
+      "esp:GND.1",
+      "black",
+      [
+        "v-40",
+        "h10"
+      ]
+    ],
+    [
+      "led1:A",
+      "esp:2",
+      "red",
+      [
+        "v-80",
+        "h10"
+      ]
+    ],
+    [
+      "led1:C",
+      "r1:1",
+      "gray",
+      [
+        "v10"
+      ]
+    ],
+    [
+      "r1:2",
+      "esp:GND.3",
+      "black",
+      [
+        "h30",
+        "v-240"
+      ]
+    ],
+    [
+      "bz1:2",
+      "esp:18",
+      "magenta",
+      [
+        "v-140",
+        "h-80"
+      ]
+    ],
+    [
+      "bz1:1",
+      "esp:GND.3",
+      "black",
+      [
+        "v-120",
+        "h-90"
+      ]
+    ]
+  ],
+  "dependencies": {}
+}
