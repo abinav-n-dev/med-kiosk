@@ -1,36 +1,38 @@
 /*
- * TriageQ Smart Clinic - Physical ESP32 Clinical Hardware Node (Zero
- * Potentiometers) Target Board: ESP32 DevKit / ESP-WROOM-32 (Arduino IDE:
- * "ESP32 Dev Module")
- *
- * Shared I2C Bus (GPIO 21 SDA, GPIO 22 SCL at 100 kHz Standard Mode):
- *  - 20x4 Character LCD via PCF8574 I2C Backpack  -> Address 0x27 (or 0x3F)
- *  - MAX30102 / MAX30100 Pulse Oximeter (3.3V)    -> Address 0x57
- *  - MLX90614 (GY-906) Contactless IR Temp (3.3V) -> Address 0x5A
- *
- * Digital / Peripherals:
- *  - GPIO 5   -> HC-SR04 TRIG (Output)
- *  - GPIO 19  -> HC-SR04 ECHO (Input; use 1k / 2k voltage divider if powered by
- * 5V)
- *  - GPIO 18  -> Piezo Buzzer (+) [Call double-beep & Emergency siren]
- *  - GPIO 2   -> Red Alarm LED Anode (+) via 220 Ohm resistor [EMERGENCY ONLY]
- *  - GPIO 13  -> Physical Red SOS Pushbutton -> GND (INPUT_PULLUP)
- *  - GPIO 14  -> Physical Green Mute/Stop Pushbutton -> GND (INPUT_PULLUP)
- *
- * Required Arduino IDE Libraries:
- *  - PubSubClient (by Nick O'Leary)
- *  - LiquidCrystal_I2C (by Frank de Brabander)
- *  - Adafruit MLX90614 Library (when ENABLE_MLX90614 == 1)
- *  - SparkFun MAX3010x Pulse and Proximity Sensor Library (when OXIMETER_MODE
- * == 2)
- *  - MAX30100lib (by OXullo Intersecans, only if OXIMETER_MODE == 1)
- */
+   * TriageQ Smart Clinic - Physical ESP32 Clinical Hardware Node (Zero
+   * Potentiometers) Target Board: ESP32 DevKit / ESP-WROOM-32 (Arduino IDE:
+   * "ESP32 Dev Module")
+   *
+   * Shared I2C Bus (GPIO 21 SDA, GPIO 22 SCL at 100 kHz Standard Mode):
+   *  - 20x4 Character LCD via PCF8574 I2C Backpack  -> Address 0x27 (or 0x3F)
+   *  - MAX30102 / MAX30100 Pulse Oximeter (3.3V)    -> Address 0x57
+   *  - MLX90614 (GY-906) Contactless IR Temp (3.3V) -> Address 0x5A
+   *
+   * Digital / Peripherals:
+   *  - GPIO 5   -> HC-SR04 TRIG (Output)
+   *  - GPIO 19  -> HC-SR04 ECHO (Input; use 1k / 2k voltage divider if powered
+   * by 5V)
+   *  - GPIO 18  -> Piezo Buzzer (+) [Call double-beep & Emergency siren]
+   *  - GPIO 2   -> Red Alarm LED Anode (+) via 220 Ohm resistor [EMERGENCY
+   * ONLY]
+   *  - GPIO 13  -> Physical Red SOS Pushbutton -> GND (INPUT_PULLUP)
+   *  - GPIO 14  -> Physical Green Mute/Stop Pushbutton -> GND (INPUT_PULLUP)
+   *
+   * Required Arduino IDE Libraries:
+   *  - PubSubClient (by Nick O'Leary)
+   *  - LiquidCrystal_I2C (by Frank de Brabander)
+   *  - Adafruit MLX90614 Library (when ENABLE_MLX90614 == 1)
+   *  - SparkFun MAX3010x Pulse and Proximity Sensor Library (when OXIMETER_MODE
+   * == 2)
+   *  - MAX30100lib (by OXullo Intersecans, only if OXIMETER_MODE == 1)
+   */
 
 // ===================== BUILD FEATURE SWITCHES =====================
 // Set to 1 once your MLX90614 (GY-906) is wired, or 0 while waiting on delivery
 #define ENABLE_MLX90614 1
 
-// Select your green oximeter chip (boot Serial Monitor prints the detected Part ID):
+// Select your green oximeter chip (boot Serial Monitor prints the detected Part
+// ID):
 //   2 = MAX30102 (Part ID 0x15) via SparkFun MAX30105.h + heartRate.h
 //   1 = MAX30100 (Part ID 0x11) via MAX30100_PulseOximeter.h
 //   0 = Oximeter not attached yet
@@ -72,8 +74,9 @@
 #include "MAX30100_PulseOximeter.h"
 #endif
 
-// --- Wi-Fi Configuration (MUST be 2.4 GHz Wi-Fi / Mobile Hotspot for ESP32) ---
-const char *ssid = "abinav123";
+    // --- Wi-Fi Configuration (MUST be 2.4 GHz Wi-Fi / Mobile Hotspot for
+    // ESP32) ---
+    const char *ssid = "abinav123";
 const char *password = "12345678";
 
 // --- MQTT Cloud Broker Configuration (Matches shared/api.js & Live Web
@@ -178,14 +181,22 @@ int lastMuteReading = HIGH;
 unsigned long lastMuteDebounceTime = 0;
 
 // --- Custom 5x8 CGRAM Character Glyphs (Exactly 8 Slots) ---
-const byte GLYPH_EYE_OPEN_DATA[8] = { 0b00000, 0b01110, 0b10101, 0b10101, 0b10101, 0b01110, 0b00000, 0b00000 };
-const byte GLYPH_EYE_BLINK_DATA[8] = { 0b00000, 0b00000, 0b00000, 0b11111, 0b00000, 0b00000, 0b00000, 0b00000 };
-const byte GLYPH_EYE_HAPPY_DATA[8] = { 0b00000, 0b00100, 0b01010, 0b10001, 0b00000, 0b00000, 0b00000, 0b00000 };
-const byte GLYPH_HEART_SM_DATA[8] = { 0b00000, 0b01010, 0b11111, 0b11111, 0b01110, 0b00100, 0b00000, 0b00000 };
-const byte GLYPH_HEART_LG_DATA[8] = { 0b01010, 0b11111, 0b11111, 0b11111, 0b01110, 0b00100, 0b00000, 0b00000 };
-const byte GLYPH_WATER_DROP_DATA[8] = { 0b00100, 0b00100, 0b01010, 0b01010, 0b10001, 0b10001, 0b01110, 0b00000 };
-const byte GLYPH_WATER_CUP_DATA[8] = { 0b00000, 0b11110, 0b10011, 0b10011, 0b10010, 0b01100, 0b00000, 0b00000 };
-const byte GLYPH_CHECK_DATA[8] = { 0b00000, 0b00001, 0b00010, 0b10100, 0b01000, 0b00000, 0b00000, 0b00000 };
+const byte GLYPH_EYE_OPEN_DATA[8] = {0b00000, 0b01110, 0b10101, 0b10101,
+                                     0b10101, 0b01110, 0b00000, 0b00000};
+const byte GLYPH_EYE_BLINK_DATA[8] = {0b00000, 0b00000, 0b00000, 0b11111,
+                                      0b00000, 0b00000, 0b00000, 0b00000};
+const byte GLYPH_EYE_HAPPY_DATA[8] = {0b00000, 0b00100, 0b01010, 0b10001,
+                                      0b00000, 0b00000, 0b00000, 0b00000};
+const byte GLYPH_HEART_SM_DATA[8] = {0b00000, 0b01010, 0b11111, 0b11111,
+                                     0b01110, 0b00100, 0b00000, 0b00000};
+const byte GLYPH_HEART_LG_DATA[8] = {0b01010, 0b11111, 0b11111, 0b11111,
+                                     0b01110, 0b00100, 0b00000, 0b00000};
+const byte GLYPH_WATER_DROP_DATA[8] = {0b00100, 0b00100, 0b01010, 0b01010,
+                                       0b10001, 0b10001, 0b01110, 0b00000};
+const byte GLYPH_WATER_CUP_DATA[8] = {0b00000, 0b11110, 0b10011, 0b10011,
+                                      0b10010, 0b01100, 0b00000, 0b00000};
+const byte GLYPH_CHECK_DATA[8] = {0b00000, 0b00001, 0b00010, 0b10100,
+                                  0b01000, 0b00000, 0b00000, 0b00000};
 
 enum BuddyState {
   BUDDY_STANDBY,
@@ -221,15 +232,16 @@ unsigned long lastLcdRefresh = 0;
 
 // Register all 8 CGRAM character glyphs in LCD controller
 void initCustomGlyphs() {
-  if (!lcdKioskReady) return;
-  lcdKiosk.createChar(0, (uint8_t*)GLYPH_EYE_OPEN_DATA);
-  lcdKiosk.createChar(1, (uint8_t*)GLYPH_EYE_BLINK_DATA);
-  lcdKiosk.createChar(2, (uint8_t*)GLYPH_EYE_HAPPY_DATA);
-  lcdKiosk.createChar(3, (uint8_t*)GLYPH_HEART_SM_DATA);
-  lcdKiosk.createChar(4, (uint8_t*)GLYPH_HEART_LG_DATA);
-  lcdKiosk.createChar(5, (uint8_t*)GLYPH_WATER_DROP_DATA);
-  lcdKiosk.createChar(6, (uint8_t*)GLYPH_WATER_CUP_DATA);
-  lcdKiosk.createChar(7, (uint8_t*)GLYPH_CHECK_DATA);
+  if (!lcdKioskReady)
+    return;
+  lcdKiosk.createChar(0, (uint8_t *)GLYPH_EYE_OPEN_DATA);
+  lcdKiosk.createChar(1, (uint8_t *)GLYPH_EYE_BLINK_DATA);
+  lcdKiosk.createChar(2, (uint8_t *)GLYPH_EYE_HAPPY_DATA);
+  lcdKiosk.createChar(3, (uint8_t *)GLYPH_HEART_SM_DATA);
+  lcdKiosk.createChar(4, (uint8_t *)GLYPH_HEART_LG_DATA);
+  lcdKiosk.createChar(5, (uint8_t *)GLYPH_WATER_DROP_DATA);
+  lcdKiosk.createChar(6, (uint8_t *)GLYPH_WATER_CUP_DATA);
+  lcdKiosk.createChar(7, (uint8_t *)GLYPH_CHECK_DATA);
 }
 
 // --- Dual LCD Safe Dirty-Line Caches (Zero-Flicker) ---
@@ -237,11 +249,15 @@ String kioskLineCache[4] = {"", "", "", ""};
 String hallLineCache[2] = {"", ""};
 
 void kioskPrintLine(int row, String text) {
-  if (!lcdKioskReady || row < 0 || row >= LCD_KIOSK_ROWS) return;
-  while (text.length() < LCD_KIOSK_COLS) text += " ";
-  if (text.length() > LCD_KIOSK_COLS) text = text.substring(0, LCD_KIOSK_COLS);
+  if (!lcdKioskReady || row < 0 || row >= LCD_KIOSK_ROWS)
+    return;
+  while (text.length() < LCD_KIOSK_COLS)
+    text += " ";
+  if (text.length() > LCD_KIOSK_COLS)
+    text = text.substring(0, LCD_KIOSK_COLS);
 
-  if (kioskLineCache[row] == text) return;
+  if (kioskLineCache[row] == text)
+    return;
   kioskLineCache[row] = text;
 
   lcdKiosk.setCursor(0, row);
@@ -258,11 +274,15 @@ void kioskPrintLine(int row, String text) {
 }
 
 void hallPrintLine(int row, String text) {
-  if (!lcdHallReady || row < 0 || row >= LCD_HALL_ROWS) return;
-  while (text.length() < LCD_HALL_COLS) text += " ";
-  if (text.length() > LCD_HALL_COLS) text = text.substring(0, LCD_HALL_COLS);
+  if (!lcdHallReady || row < 0 || row >= LCD_HALL_ROWS)
+    return;
+  while (text.length() < LCD_HALL_COLS)
+    text += " ";
+  if (text.length() > LCD_HALL_COLS)
+    text = text.substring(0, LCD_HALL_COLS);
 
-  if (hallLineCache[row] == text) return;
+  if (hallLineCache[row] == text)
+    return;
   hallLineCache[row] = text;
 
   lcdHall.setCursor(0, row);
@@ -272,9 +292,7 @@ void hallPrintLine(int row, String text) {
 }
 
 // Backward-compatibility wrapper for existing single-screen calls
-void lcdPrintLine(int row, String text) {
-  kioskPrintLine(row, text);
-}
+void lcdPrintLine(int row, String text) { kioskPrintLine(row, text); }
 
 // --- I2C Boot Diagnostics (Prints LCD, Oximeter Part ID, and MLX90614 Status)
 // ---
@@ -353,13 +371,16 @@ void initSensors() {
     lcdKiosk.clear();
     initCustomGlyphs();
     lcdReady = true;
-    Serial.println("[LCD KIOSK] 20x4 I2C LCD initialized (Patient Intake Display).");
+    Serial.println(
+        "[LCD KIOSK] 20x4 I2C LCD initialized (Patient Intake Display).");
   } else {
     lcdReady = false;
-    Serial.println("[LCD KIOSK] 20x4 LCD not detected at 0x27/0x3F; running headless on Serial.");
+    Serial.println("[LCD KIOSK] 20x4 LCD not detected at 0x27/0x3F; running "
+                   "headless on Serial.");
   }
 
-  // 2. Secondary Display: 16x2 Waiting Hall LCD (0x26 with A0 bridge, or 0x3E/0x38)
+  // 2. Secondary Display: 16x2 Waiting Hall LCD (0x26 with A0 bridge, or
+  // 0x3E/0x38)
   if (checkI2CAddress(LCD_HALL_ADDR)) {
     lcdHallReady = true;
   } else if (checkI2CAddress(0x3E)) {
@@ -374,9 +395,11 @@ void initSensors() {
     lcdHall.init();
     lcdHall.backlight();
     lcdHall.clear();
-    Serial.println("[LCD HALL] 16x2 I2C LCD initialized (Waiting Hall Display).");
+    Serial.println(
+        "[LCD HALL] 16x2 I2C LCD initialized (Waiting Hall Display).");
   } else {
-    Serial.println("[LCD HALL] 16x2 LCD not detected yet (will activate once wired at 0x26).");
+    Serial.println("[LCD HALL] 16x2 LCD not detected yet (will activate once "
+                   "wired at 0x26).");
   }
 
 #if ENABLE_MLX90614
@@ -411,10 +434,14 @@ void initSensors() {
   }
 #elif OXIMETER_MODE == 1
   if (checkI2CAddress(0x57) && pox.begin()) {
-    Wire.setClock(100000); // CRITICAL: Reset bus to 100 kHz Standard Mode (pox.begin forces 400kHz which corrupts PCF8574/MLX)
-    pox.setIRLedCurrent(MAX30100_LED_CURR_50MA); // Full 50mA drive for strong optical penetration
+    Wire.setClock(
+        100000); // CRITICAL: Reset bus to 100 kHz Standard Mode (pox.begin
+                 // forces 400kHz which corrupts PCF8574/MLX)
+    pox.setIRLedCurrent(MAX30100_LED_CURR_50MA); // Full 50mA drive for strong
+                                                 // optical penetration
     oxReady = true;
-    Serial.println("[MAX30100] OXullo PulseOximeter initialized at 0x57 (I2C locked to 100 kHz, 50mA LED).");
+    Serial.println("[MAX30100] OXullo PulseOximeter initialized at 0x57 (I2C "
+                   "locked to 100 kHz, 50mA LED).");
   } else {
     oxReady = false;
     Serial.println("[MAX30100] Not detected at 0x57 yet.");
@@ -469,19 +496,28 @@ char getLiveEyeGlyph() {
 
 // --- Display 1: Dedicated 20x4 Patient Kiosk Intake Display ---
 void refreshKioskDisplay() {
-  if (!lcdKioskReady || emergencyActive) return;
+  if (!lcdKioskReady || emergencyActive)
+    return;
 
-  // Single-screen fallback: If 16x2 Hall screen is not attached, let 20x4 handle active doctor calls
-  if (!lcdHallReady && currentBuddyState == BUDDY_CALL && (millis() - lastCallTime < 25000)) {
-    kioskPrintLine(0, activeCalledEmergency ? "* CRITICAL CALL *   " : "*** NOW CALLING *** ");
+  // Single-screen fallback: If 16x2 Hall screen is not attached, let 20x4
+  // handle active doctor calls
+  if (!lcdHallReady && currentBuddyState == BUDDY_CALL &&
+      (millis() - lastCallTime < 25000)) {
+    kioskPrintLine(0, activeCalledEmergency ? "* CRITICAL CALL *   "
+                                            : "*** NOW CALLING *** ");
     String line1 = "TOKEN: " + activeCalledToken;
-    while (line1.length() < 20) line1 += " ";
+    while (line1.length() < 20)
+      line1 += " ";
     kioskPrintLine(1, line1);
     String line2 = activeCalledDoctor;
-    while (line2.length() < 20) line2 += " ";
+    while (line2.length() < 20)
+      line2 += " ";
     kioskPrintLine(2, line2);
-    String line3 = (activeCalledRoom.length() > 0) ? ("PLEASE GO TO " + activeCalledRoom) : "PROCEED TO CABIN    ";
-    while (line3.length() < 20) line3 += " ";
+    String line3 = (activeCalledRoom.length() > 0)
+                       ? ("PLEASE GO TO " + activeCalledRoom)
+                       : "PROCEED TO CABIN    ";
+    while (line3.length() < 20)
+      line3 += " ";
     kioskPrintLine(3, line3);
     return;
   }
@@ -490,9 +526,11 @@ void refreshKioskDisplay() {
   if (currentKioskStage == "standby") {
     kioskPrintLine(0, "=== MEDICORE CLINIC =");
     kioskPrintLine(1, "Smart Intake Kiosk  ");
-    kioskPrintLine(2, currentMotion ? "PATIENT DETECTED!   " : "Approach To Begin   ");
+    kioskPrintLine(2, currentMotion ? "PATIENT DETECTED!   "
+                                    : "Approach To Begin   ");
     kioskPrintLine(3, "[PIR + Radar Active]");
-  } else if (currentKioskStage == "lang" || currentKioskStage == "name" || currentKioskStage == "age" || currentKioskStage == "ask") {
+  } else if (currentKioskStage == "lang" || currentKioskStage == "name" ||
+             currentKioskStage == "age" || currentKioskStage == "ask") {
     kioskPrintLine(0, "PATIENT REGISTRATION");
     kioskPrintLine(1, "Please Touch Screen ");
     kioskPrintLine(2, "To Enter Details    ");
@@ -500,21 +538,29 @@ void refreshKioskDisplay() {
   } else if (currentKioskStage == "align") {
     kioskPrintLine(0, "STEP 1: TEMP ALIGN  ");
     bool inTarget = (currentDistanceCm >= 3 && currentDistanceCm <= 5);
-    String distStr = (currentDistanceCm > 15) ? "Dist: >15cm (Too Far)" : ("Dist: " + String(currentDistanceCm) + " cm " + (inTarget ? "[TARGET]" : "[ADJUST]"));
+    String distStr = (currentDistanceCm > 15)
+                         ? "Dist: >15cm (Too Far)"
+                         : ("Dist: " + String(currentDistanceCm) + " cm " +
+                            (inTarget ? "[TARGET]" : "[ADJUST]"));
     kioskPrintLine(1, distStr);
 
     // Dynamic distance bar gauge [====|-----------] 4cm
     int meterPos = constrain(currentDistanceCm, 0, 15);
     String gauge = "[";
     for (int i = 0; i < 14; i++) {
-      if (i == 4) gauge += "|";
-      else if (i == meterPos) gauge += "#";
-      else gauge += "-";
+      if (i == 4)
+        gauge += "|";
+      else if (i == meterPos)
+        gauge += "#";
+      else
+        gauge += "-";
     }
     gauge += "] " + String(currentDistanceCm) + "cm";
     kioskPrintLine(2, gauge);
-    kioskPrintLine(3, inTarget ? "HOLD STILL: 3-5 CM  " : "MOVE CLOSER (3-5CM) ");
-  } else if (currentKioskStage == "temp_scan" || currentKioskStage == "scan_temp") {
+    kioskPrintLine(3,
+                   inTarget ? "HOLD STILL: 3-5 CM  " : "MOVE CLOSER (3-5CM) ");
+  } else if (currentKioskStage == "temp_scan" ||
+             currentKioskStage == "scan_temp") {
     kioskPrintLine(0, "DISTANCE LOCKED OK  ");
     kioskPrintLine(1, "Measuring Temp...   ");
     String sec = (buddyStageExtra.length() > 0) ? buddyStageExtra : "3";
@@ -522,25 +568,35 @@ void refreshKioskDisplay() {
     kioskPrintLine(3, "Keep Forehead Steady");
   } else if (currentKioskStage == "temp_ok") {
     kioskPrintLine(0, "TEMP RECORDED       ");
-    String tStr = tempValid ? (String(currentTempF, 1) + " F ") : (buddyStageExtra + " F ");
-    bool isFever = (tempValid && currentTempF >= 100.4f) || (buddyStageExtra.toFloat() >= 100.4f);
+    String tStr = tempValid ? (String(currentTempF, 1) + " F ")
+                            : (buddyStageExtra + " F ");
+    bool isFever = (tempValid && currentTempF >= 100.4f) ||
+                   (buddyStageExtra.toFloat() >= 100.4f);
     kioskPrintLine(1, tStr + (isFever ? "[HIGH FEVER]" : "[NORMAL]    "));
     kioskPrintLine(2, "Next: Blood Oxygen  ");
     kioskPrintLine(3, "Proceed To Sensor   ");
-  } else if (currentKioskStage == "tutorial_spo2" || currentKioskStage == "spo2") {
+  } else if (currentKioskStage == "tutorial_spo2" ||
+             currentKioskStage == "spo2") {
     kioskPrintLine(0, "STEP 2: SpO2 & PULSE");
-    kioskPrintLine(1, fingerPresent ? "Finger: DETECTED    " : "Place Index Finger  ");
-    kioskPrintLine(2, fingerPresent ? "Reading Pulse...    " : "On Red Glow Sensor  ");
-    String pStr = (fingerPresent && currentPulse > 0) ? ("Live HR: " + String(currentPulse) + " BPM") : "Relax & Hold Still  ";
+    kioskPrintLine(1, fingerPresent ? "Finger: DETECTED    "
+                                    : "Place Index Finger  ");
+    kioskPrintLine(2, fingerPresent ? "Reading Pulse...    "
+                                    : "On Red Glow Sensor  ");
+    String pStr = (fingerPresent && currentPulse > 0)
+                      ? ("Live HR: " + String(currentPulse) + " BPM")
+                      : "Relax & Hold Still  ";
     kioskPrintLine(3, pStr);
   } else if (currentKioskStage == "spo2_scan") {
     kioskPrintLine(0, "MEASURING SpO2...   ");
     kioskPrintLine(1, "Finger: DETECTED    ");
     String sec = (buddyStageExtra.length() > 0) ? buddyStageExtra : "5";
     kioskPrintLine(2, "Settling in: " + sec + "s...   ");
-    String pStr = (currentPulse > 0) ? ("Live HR: " + String(currentPulse) + " BPM") : "Hold Finger Steady  ";
+    String pStr = (currentPulse > 0)
+                      ? ("Live HR: " + String(currentPulse) + " BPM")
+                      : "Hold Finger Steady  ";
     kioskPrintLine(3, pStr);
-  } else if (currentKioskStage == "vitals" || currentKioskStage == "summary" || currentKioskStage == "vitals_done") {
+  } else if (currentKioskStage == "vitals" || currentKioskStage == "summary" ||
+             currentKioskStage == "vitals_done") {
     kioskPrintLine(0, "CLINICAL VITALS OK  ");
     String tStr = tempValid ? (String(currentTempF, 1) + "F ") : "--.-F ";
     bool isFever = tempValid && currentTempF >= 100.4f;
@@ -564,7 +620,8 @@ void refreshKioskDisplay() {
 
 // --- Display 2: Dedicated 16x2 Waiting Hall Calling Display ---
 void refreshHallDisplay() {
-  if (!lcdHallReady) return;
+  if (!lcdHallReady)
+    return;
 
   if (emergencyActive) {
     hallPrintLine(0, "*EMERGENCY ALERT*");
@@ -573,21 +630,28 @@ void refreshHallDisplay() {
   }
 
   if (currentBuddyState == BUDDY_CALL) {
-    hallPrintLine(0, (activeCalledEmergency ? "*EMERG* " : "CALL: ") + activeCalledToken);
-    String docStr = activeCalledDoctor.length() > 0 ? activeCalledDoctor : ("GO TO " + activeCalledRoom);
+    hallPrintLine(0, (activeCalledEmergency ? "*EMERG* " : "CALL: ") +
+                         activeCalledToken);
+    String docStr = activeCalledDoctor.length() > 0
+                        ? activeCalledDoctor
+                        : ("GO TO " + activeCalledRoom);
     hallPrintLine(1, docStr.substring(0, 16));
     return;
   }
 
   if (currentBuddyState == BUDDY_DONE) {
     hallPrintLine(0, "CONSULT DONE    ");
-    hallPrintLine(1, (activeCalledRoom.length() > 0 ? activeCalledRoom : "CABIN") + " AVAILABLE");
+    hallPrintLine(1,
+                  (activeCalledRoom.length() > 0 ? activeCalledRoom : "CABIN") +
+                      " AVAILABLE");
     return;
   }
 
   if (currentBuddyState == BUDDY_BREAK) {
     hallPrintLine(0, "DOCTOR ON BREAK ");
-    hallPrintLine(1, buddyStageExtra.length() > 0 ? buddyStageExtra.substring(0, 16) : "RESUMING SOON   ");
+    hallPrintLine(1, buddyStageExtra.length() > 0
+                         ? buddyStageExtra.substring(0, 16)
+                         : "RESUMING SOON   ");
     return;
   }
 
@@ -607,14 +671,17 @@ void refreshDeskBuddyDisplay() {
 }
 
 void handleKioskStage(String payload) {
-  if (emergencyActive) return;
+  if (emergencyActive)
+    return;
 
   int pipe = payload.indexOf('|');
   String stage = (pipe != -1) ? payload.substring(0, pipe) : payload;
   String extra = (pipe != -1) ? payload.substring(pipe + 1) : "";
 
-  // If only 1 LCD present and doctor has called a patient within 25s, hold banner
-  if (!lcdHallReady && currentBuddyState == BUDDY_CALL && (millis() - lastCallTime < 25000)) {
+  // If only 1 LCD present and doctor has called a patient within 25s, hold
+  // banner
+  if (!lcdHallReady && currentBuddyState == BUDDY_CALL &&
+      (millis() - lastCallTime < 25000)) {
     if (stage != "token") {
       return;
     }
@@ -636,7 +703,8 @@ void handleKioskStage(String payload) {
 }
 
 void handleBreak(String data, bool onBreak) {
-  if (emergencyActive) return;
+  if (emergencyActive)
+    return;
 
   if (onBreak) {
     currentBuddyState = BUDDY_BREAK;
@@ -648,22 +716,23 @@ void handleBreak(String data, bool onBreak) {
 }
 
 // --- Standby Token + Live Sensor Summary ---
-void showStandby() {
-  refreshDeskBuddyDisplay();
-}
+void showStandby() { refreshDeskBuddyDisplay(); }
 
 // --- Sample PIR Motion Sensor (GPIO 27 -> Proximity Wake) ---
 void sampleMotion(unsigned long now) {
 #if ENABLE_PIR_MOTION
   int m = digitalRead(PIR_PIN);
-  // Dual-sensing approach detection: physical PIR HIGH or ultrasonic hand/body within 25 cm
+  // Dual-sensing approach detection: physical PIR HIGH or ultrasonic hand/body
+  // within 25 cm
   bool ultrasonicApproach = (currentDistanceCm > 0 && currentDistanceCm <= 25);
   currentMotion = (m == HIGH || ultrasonicApproach) ? 1 : 0;
   if (currentMotion == 1) {
     lastMotionSeenAt = now;
     if (lcdSleeping) {
-      if (lcdKioskReady) lcdKiosk.backlight();
-      if (lcdHallReady) lcdHall.backlight();
+      if (lcdKioskReady)
+        lcdKiosk.backlight();
+      if (lcdHallReady)
+        lcdHall.backlight();
       lcdSleeping = false;
     }
   }
@@ -695,12 +764,14 @@ void sampleUltrasonic(unsigned long now) {
   }
 }
 
-// --- Sample MLX90614 Contactless Infrared Thermometer (0x5A) with Biomimetic Engine ---
+// --- Sample MLX90614 Contactless Infrared Thermometer (0x5A) with Biomimetic
+// Engine ---
 void sampleTemperature(unsigned long now) {
 #if ENABLE_MLX90614
   // 1. If genuine physical sensor is present and answering at 0x5A, use it
   if (mlxReady) {
-    if (now - lastTempSample < 250) return;
+    if (now - lastTempSample < 250)
+      return;
     lastTempSample = now;
 
     double rawF = mlx.readObjectTempF();
@@ -720,14 +791,16 @@ void sampleTemperature(unsigned long now) {
       lastTempSample = now;
       if (checkI2CAddress(0x5A) && mlx.begin(0x5A, &Wire)) {
         mlxReady = true;
-        Serial.println("[MLX90614] Genuine sensor detected and initialized at 0x5A!");
+        Serial.println(
+            "[MLX90614] Genuine sensor detected and initialized at 0x5A!");
         return;
       }
     }
   }
 
   // 2. Production Biomimetic Distance-Coupled Thermal Simulation Engine
-  // Automatically triggers when a patient places their forehead/hand 3-18 cm from sensor
+  // Automatically triggers when a patient places their forehead/hand 3-18 cm
+  // from sensor
   if (currentDistanceCm >= 3 && currentDistanceCm <= 18) {
     if (tempFocusStartTime == 0) {
       tempFocusStartTime = now;
@@ -738,7 +811,10 @@ void sampleTemperature(unsigned long now) {
     if (elapsed < 1200) {
       // Dynamic thermal convergence curve over 1.2s
       float target = feverSimMode ? 101.4f : 98.6f;
-      currentTempF = roundf((94.5f + ((float)elapsed / 1200.0f) * (target - 94.5f)) * 10.0f) / 10.0f;
+      currentTempF =
+          roundf((94.5f + ((float)elapsed / 1200.0f) * (target - 94.5f)) *
+                 10.0f) /
+          10.0f;
       tempValid = true;
     } else {
       // Locked-in vital measurement with slight distance-dependent variation
@@ -882,12 +958,14 @@ void sampleOximeter() {
   uint8_t sp = pox.getSpO2();
 
   bool opticalFinger = pox.isFingerDetected();
-  bool realPulseValid = (opticalFinger && hr >= 35.0f && hr <= 210.0f && sp >= 60 && sp <= 100);
+  bool realPulseValid =
+      (opticalFinger && hr >= 35.0f && hr <= 210.0f && sp >= 60 && sp <= 100);
 
   if (opticalFinger) {
     // Finger physically detected on optical sensor window
     if (!fingerPresent) {
-      Serial.printf("\n[OXIMETER] >>> FINGER DETECTED <<< (IR: %u, RED: %u)\n", pox.getRawIR(), pox.getRawRed());
+      Serial.printf("\n[OXIMETER] >>> FINGER DETECTED <<< (IR: %u, RED: %u)\n",
+                    pox.getRawIR(), pox.getRawRed());
     }
     fingerPresent = true;
     if (realPulseValid) {
@@ -897,12 +975,14 @@ void sampleOximeter() {
       unsigned long nowMs = millis();
       int cycle = (nowMs / 1800) % 3;
       currentPulse = 72 + cycle; // Living human pulse: 72, 73, 74 bpm
-      currentSpO2 = (feverSimMode) ? 91 : (98 + (cycle == 1 ? 1 : 0)); // 98% - 99%
+      currentSpO2 =
+          (feverSimMode) ? 91 : (98 + (cycle == 1 ? 1 : 0)); // 98% - 99%
     }
   } else {
     // Optical window is empty - NO FINGER ON SENSOR
     if (fingerPresent) {
-      Serial.printf("\n[OXIMETER] <<< FINGER REMOVED  <<< (IR: %u, RED: %u)\n", pox.getRawIR(), pox.getRawRed());
+      Serial.printf("\n[OXIMETER] <<< FINGER REMOVED  <<< (IR: %u, RED: %u)\n",
+                    pox.getRawIR(), pox.getRawRed());
     }
     fingerPresent = false;
     currentPulse = 0;
@@ -920,12 +1000,15 @@ void publishVitals(unsigned long now) {
   bool motionChanged = (currentMotion != lastSentMotion);
   bool tempChanged = (tempValid != lastSentTempValid) ||
                      (tempValid && fabsf(currentTempF - lastSentTempF) >= 0.1f);
-  bool changed = fingerChanged || motionChanged || tempChanged || (currentSpO2 != lastSentSpO2) ||
+  bool changed = fingerChanged || motionChanged || tempChanged ||
+                 (currentSpO2 != lastSentSpO2) ||
                  (abs(currentPulse - lastSentPulse) >= 2) ||
                  (currentDistanceCm != lastSentDist);
 
-  // If finger state changed (touch or lift) OR motion changed, publish INSTANTLY with 0 delay!
-  bool publishNow = fingerChanged || motionChanged || (changed && (now - lastVitalsPublish >= 120)) ||
+  // If finger state changed (touch or lift) OR motion changed, publish
+  // INSTANTLY with 0 delay!
+  bool publishNow = fingerChanged || motionChanged ||
+                    (changed && (now - lastVitalsPublish >= 120)) ||
                     (now - lastVitalsPublish >= 1500);
 
   if (!publishNow)
@@ -941,10 +1024,11 @@ void publishVitals(unsigned long now) {
   lastSentMotion = currentMotion;
 
   String tempJson = tempValid ? String(currentTempF, 1) : "null";
-  String spo2Json = (fingerPresent && currentSpO2 > 0) ? String(currentSpO2) : "null";
-  String pulseJson = (fingerPresent && currentPulse > 0) ? String(currentPulse) : "null";
-  String payload = "{\"temp\":" + tempJson +
-                   ",\"pulse\":" + pulseJson +
+  String spo2Json =
+      (fingerPresent && currentSpO2 > 0) ? String(currentSpO2) : "null";
+  String pulseJson =
+      (fingerPresent && currentPulse > 0) ? String(currentPulse) : "null";
+  String payload = "{\"temp\":" + tempJson + ",\"pulse\":" + pulseJson +
                    ",\"spo2\":" + spo2Json +
                    ",\"dist\":" + String(currentDistanceCm) +
                    ",\"motion\":" + String(currentMotion) +
@@ -960,8 +1044,8 @@ void publishVitals(unsigned long now) {
   }
 
   if (changed) {
-    Serial.println("[VITALS HW] Temp: " + tempJson + " F | SpO2: " +
-                   spo2Json + " | Pulse: " + pulseJson +
+    Serial.println("[VITALS HW] Temp: " + tempJson + " F | SpO2: " + spo2Json +
+                   " | Pulse: " + pulseJson +
                    " | Dist: " + String(currentDistanceCm) +
                    " cm | Motion: " + (currentMotion ? "DETECTED" : "IDLE"));
   }
@@ -1151,13 +1235,15 @@ String serialBuffer = "";
 
 void processIncomingCommand(String message) {
   message.trim();
-  if (message.length() == 0) return;
+  if (message.length() == 0)
+    return;
 
   if (message.indexOf("EMERGENCY_ON") >= 0) {
     triggerEmergency();
   } else if (message.indexOf("EMERGENCY_OFF") >= 0) {
     silenceEmergency();
-  } else if (message.indexOf("FEVER_ON") >= 0 || message.indexOf("STAGE:fever") >= 0) {
+  } else if (message.indexOf("FEVER_ON") >= 0 ||
+             message.indexOf("STAGE:fever") >= 0) {
     feverSimMode = true;
     lastVitalsPublish = 0;
     Serial.println("[SIM] Remote Fever Mode Activated (101.4 F)!");
@@ -1181,7 +1267,8 @@ void processIncomingCommand(String message) {
     lastSentMotion = 999;
     lastSentFingerPresent = !fingerPresent;
     lastVitalsPublish = 0;
-    Serial.println("[COMMAND] Web Client Requested Sync -> Instant Vitals Broadcast");
+    Serial.println(
+        "[COMMAND] Web Client Requested Sync -> Instant Vitals Broadcast");
   }
 }
 
@@ -1236,13 +1323,15 @@ void reconnect() {
 
 void toggleEmergencyAlarm() {
   if (!emergencyActive) {
-    Serial.println("\n[BUTTON] Hardware Button Pressed -> Triggering Emergency Alarm!");
+    Serial.println(
+        "\n[BUTTON] Hardware Button Pressed -> Triggering Emergency Alarm!");
     triggerEmergency();
     if (client.connected()) {
       client.publish(emergency_topic, "EMERGENCY_ON", false);
     }
   } else {
-    Serial.println("\n[BUTTON] Hardware Button Pressed -> Silencing Emergency Alarm!");
+    Serial.println(
+        "\n[BUTTON] Hardware Button Pressed -> Silencing Emergency Alarm!");
     silenceEmergency();
     if (client.connected()) {
       client.publish(emergency_topic, "EMERGENCY_OFF", true);
@@ -1266,7 +1355,8 @@ void handleButtons() {
   }
 
   // Check GPIO 14 (Green / Mute Button) with Long-Press (2s) Fever Toggle
-  if ((now - lastMuteDebounceTime) > DEBOUNCE_DELAY && muteReading != muteButtonState) {
+  if ((now - lastMuteDebounceTime) > DEBOUNCE_DELAY &&
+      muteReading != muteButtonState) {
     muteButtonState = muteReading;
     if (muteButtonState == LOW) {
       muteButtonPressStart = now;
@@ -1275,7 +1365,8 @@ void handleButtons() {
       if (pressDuration >= 2000) {
         // Long Press (>2 seconds): Toggle Biomimetic Fever Mode
         feverSimMode = !feverSimMode;
-        Serial.printf("\n[SIM] FEVER MODE TOGGLED: %s\n", feverSimMode ? "ON (101.4 F)" : "OFF (98.6 F)");
+        Serial.printf("\n[SIM] FEVER MODE TOGGLED: %s\n",
+                      feverSimMode ? "ON (101.4 F)" : "OFF (98.6 F)");
         if (feverSimMode) {
           tone(BUZZER_PIN, 2400, 150);
           delay(180);
@@ -1292,7 +1383,8 @@ void handleButtons() {
         Serial.println("[BUTTON] Hardware Button (GPIO 14) Short Press");
         if (currentBuddyState == BUDDY_BREAK && !emergencyActive) {
           endWaterBreak();
-          if (client.connected()) client.publish(emergency_topic, "STAGE:resume", false);
+          if (client.connected())
+            client.publish(emergency_topic, "STAGE:resume", false);
         } else {
           toggleEmergencyAlarm();
         }
@@ -1301,7 +1393,8 @@ void handleButtons() {
   }
 
   // Check GPIO 13 (Red / SOS Button)
-  if ((now - lastSosDebounceTime) > DEBOUNCE_DELAY && sosReading != sosButtonState) {
+  if ((now - lastSosDebounceTime) > DEBOUNCE_DELAY &&
+      sosReading != sosButtonState) {
     sosButtonState = sosReading;
     if (sosButtonState == LOW) {
       Serial.println("[BUTTON] Hardware Button (GPIO 13) Pressed!");
@@ -1391,7 +1484,8 @@ void loop() {
   handleButtons();
   serviceSiren();
 
-  // Continuous sensor polling (keep non-blocking so oximeter FIFO never overflows)
+  // Continuous sensor polling (keep non-blocking so oximeter FIFO never
+  // overflows)
   sampleOximeter();
 
   unsigned long now = millis();
