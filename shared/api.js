@@ -494,7 +494,7 @@ export const getPatientToken = (tokenStr) => {
     const q = new URLSearchParams(window.location.search);
     const urlToken = (q.get('token') || '').trim().toUpperCase();
     if (urlToken === query) {
-      const docId = q.get('doc') || 'GS';
+      const docId = q.get('doc') || (query.startsWith('PS') ? 'PS' : 'GS');
       const docMeta = DOCTORS.find(d => d.id === docId) || DOCTORS[0];
       const tp = q.get('tp') ? parseFloat(q.get('tp')) : null;
       const ox = q.get('ox') ? parseInt(q.get('ox'), 10) : null;
@@ -525,6 +525,58 @@ export const getPatientToken = (tokenStr) => {
       }
       return fallbackObj;
     }
+  }
+
+  // Clinic Token Auto-Recovery Fallback (Recognizes any valid clinic token e.g. GS-042, PS-005)
+  const tokenMatch = query.match(/^([A-Z]{2})-?0*(\d+)$/);
+  if (tokenMatch) {
+    const docId = tokenMatch[1] === 'PS' ? 'PS' : 'GS';
+    const docMeta = DOCTORS.find(d => d.id === docId) || DOCTORS[0];
+    const num = parseInt(tokenMatch[2], 10) || 1;
+    const canonicalToken = `${docId}-${String(num).padStart(3, '0')}`;
+
+    if (!s.doctors[docId]) s.doctors[docId] = { serving: null, queue: [], completed: [] };
+    const docData = s.doctors[docId];
+
+    if (docData.serving && docData.serving.token === canonicalToken) {
+      return { ...docData.serving, status: 'SERVING', position: 0, etaMinutes: 0 };
+    }
+    const qIdx = docData.queue.findIndex(p => p.token === canonicalToken);
+    if (qIdx !== -1) {
+      return { ...docData.queue[qIdx], status: 'WAITING', position: qIdx + 1, etaMinutes: (qIdx + 1) * 5 };
+    }
+    const cPat = docData.completed.find(p => p.token === canonicalToken);
+    if (cPat) {
+      return { ...cPat, status: 'COMPLETED', position: -1, etaMinutes: 0 };
+    }
+
+    const curServingNum = (docData.serving && docData.serving.token)
+      ? (parseInt(docData.serving.token.replace(/^[A-Z]+-?/, ''), 10) || 0)
+      : 0;
+    const pos = Math.max(1, num > curServingNum ? (num - curServingNum) : 1);
+    const eta = pos * 5;
+
+    const synthesizedObj = {
+      token: canonicalToken,
+      doctorId: docId,
+      doctorName: docMeta.name,
+      room: docMeta.room,
+      name: 'Patient #' + num,
+      age: '',
+      phone: '',
+      symptoms: ['Clinical Consultation'],
+      vitals: { temp: null, spo2: null, pulse: null, isFever: false, isHypoxia: false },
+      isEmergency: false,
+      language: 'en',
+      status: (curServingNum === num) ? 'SERVING' : 'WAITING',
+      position: (curServingNum === num) ? 0 : pos,
+      etaMinutes: (curServingNum === num) ? 0 : eta,
+      createdAt: Date.now()
+    };
+
+    docData.queue.push(synthesizedObj);
+    setStoredItem(STORAGE_KEY, JSON.stringify(s));
+    return synthesizedObj;
   }
 
   return null;

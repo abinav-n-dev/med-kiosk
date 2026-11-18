@@ -173,6 +173,10 @@ let currentLang = (urlLang === 'hi' || urlLang === 'en')
 
 if (currentToken) {
   currentToken = currentToken.trim().toUpperCase();
+  const m = currentToken.match(/^([A-Z]{2})-?0*(\d+)$/);
+  if (m) {
+    currentToken = `${m[1]}-${String(m[2]).padStart(3, '0')}`;
+  }
   localStorage.setItem('triageq_last_token', currentToken);
 }
 
@@ -255,7 +259,7 @@ function render() {
 
   const patient = getPatientToken(currentToken);
   if (!patient) {
-    if (syncAttempts < 3) {
+    if (syncAttempts < 6) {
       syncAttempts++;
       renderLoading();
       setTimeout(render, 800);
@@ -363,9 +367,14 @@ function renderTokenInput() {
   document.getElementById('btn-toggle-lang')?.addEventListener('click', toggleLanguage);
   document.getElementById('token-search-form')?.addEventListener('submit', e => {
     e.preventDefault();
-    const val = document.getElementById('token-input').value.trim().toUpperCase();
+    let val = document.getElementById('token-input').value.trim().toUpperCase();
     if (val) {
+      const m = val.match(/^([A-Z]{2})-?0*(\d+)$/);
+      if (m) {
+        val = `${m[1]}-${String(m[2]).padStart(3, '0')}`;
+      }
       currentToken = val;
+      syncAttempts = 0;
       localStorage.setItem('triageq_last_token', currentToken);
       const newUrl = new URL(window.location);
       newUrl.searchParams.set('token', currentToken);
@@ -659,6 +668,7 @@ function showSosConfirmation(patient) {
 // Real-time synchronization
 initMqtt();
 onQueueUpdate(() => {
+  syncAttempts = 0;
   render();
 });
 
