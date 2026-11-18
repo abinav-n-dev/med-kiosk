@@ -10,8 +10,10 @@ import {
   initMqtt,
   SHOW_DEMO_HINTS,
   onQueueUpdate,
-  notifyEspKioskStage
-} from './api.js?v=22.0';
+  notifyEspKioskStage,
+  connectWebSerial,
+  isWebSerialActive
+} from './api.js?v=23.0';
 import { T } from './i18n.js?v=22.0';
 
 const $ = document.getElementById('app'), SOS = document.getElementById('sos');
@@ -216,6 +218,7 @@ const evalDistance = d => {
 };
 
 const telemetryStripHtml = hwLive => {
+  const isUsb = isWebSerialActive();
   const liveTempText = hwLive && HW.temp !== null ? `${HW.temp.toFixed(1)} °F` : '--.- °F';
   const liveSpo2Text = hwLive && HW.spo2 !== null ? `${HW.spo2}%` : '--%';
   const livePulseText = hwLive && HW.pulse !== null ? `${HW.pulse} BPM` : '-- BPM';
@@ -229,6 +232,10 @@ const telemetryStripHtml = hwLive => {
       <div class="hw-telemetry-item"><span>SpO2 / HR (MAX30102)</span><b>${liveSpo2Text} · ${livePulseText}</b></div>
       <div class="hw-telemetry-item"><span>ALIGN (HC-SR04)</span><b>${distText}</b></div>
       <div class="hw-telemetry-item"><span>PIR WAKE (HC-SR501)</span><b>${motionText}</b></div>
+      <div class="hw-telemetry-item usb-status-item" data-a="connectUsb" style="cursor:pointer;" title="Click to Connect or Reconnect USB Hardware">
+        <span>LINK MODE</span>
+        <b style="color:${isUsb ? '#059669' : '#0284c7'}">${isUsb ? 'USB 0ms [ACTIVE]' : (hwLive ? 'CLOUD MQTT' : 'CONNECT USB')}</b>
+      </div>
     </div>
   `;
 };
@@ -871,6 +878,10 @@ const countdown = (n, cb) => {
 };
 
 const A = {
+  connectUsb: async () => {
+    await connectWebSerial(true);
+    draw();
+  },
   wake: () => {
     if (S.step !== 'standby') return;
     S.step = 'lang';
@@ -1511,6 +1522,12 @@ window.addEventListener('triageq_vitals_update', e => {
 
 (async () => {
   initMqtt();
+  try {
+    connectWebSerial(false);
+  } catch (e) {}
+  window.addEventListener('triageq_serial_status', () => {
+    draw();
+  });
   depts = await getDoctors();
   S = fresh();
   sum = await getQueueSummary();

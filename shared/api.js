@@ -830,23 +830,27 @@ function publishMqttState(state) {
 export const notifyEspCall = (callData = {}) => {
   const { doctorId = '', doctorName = 'Doctor', room = 'OPD', token = '---', patientName = '', isEmergency = false } = callData;
   const payload = `CALL:${token}|${doctorName}|${room}|${patientName}|${isEmergency ? 'EMERGENCY' : 'NORMAL'}`;
-  console.log('[ESP32-MQTT] Broadcasting Patient Call to LCD Display & Buzzer:', payload);
+  console.log('[ESP32-Call] Broadcasting Patient Call to LCD Display & Buzzer:', payload);
+  sendSerialCommand(payload);
   safePublish(MQTT_CONFIG.emergencyTopic, payload, { qos: 1 });
 };
 
 export const notifyEspComplete = ({ doctorId = '', doctorName = 'Doctor', room = 'OPD', token = '' } = {}) => {
   const payload = `DONE:${room}|${doctorName}|${token}`;
-  console.log('[ESP32-MQTT] Broadcasting Consultation Done to LCD Display:', payload);
+  console.log('[ESP32-Done] Broadcasting Consultation Done to LCD Display:', payload);
+  sendSerialCommand(payload);
   safePublish(MQTT_CONFIG.emergencyTopic, payload, { qos: 1 });
 };
 
 export const notifyEspChime = (doctorId = '') => {
+  sendSerialCommand(`CALL_NEXT:${doctorId}`);
   safePublish(MQTT_CONFIG.emergencyTopic, `CALL_NEXT:${doctorId}`, { qos: 1 });
 };
 
 export const raiseEmergency = async (opts = {}) => {
   console.log('[ESP32-MQTT] Raising Emergency Alarm:', opts);
   playChime('emergency');
+  sendSerialCommand('EMERGENCY_ON');
   safePublish(MQTT_CONFIG.emergencyTopic, 'EMERGENCY_ON', { qos: 1 });
   const s = getState();
   s.emergency = true;
@@ -878,6 +882,7 @@ export const raiseEmergency = async (opts = {}) => {
 
 export const resolveEmergency = async (opts = {}) => {
   console.log('[ESP32-MQTT] Resolving Emergency / Silencing Buzzer:', opts);
+  sendSerialCommand('EMERGENCY_OFF');
   safePublish(MQTT_CONFIG.emergencyTopic, 'EMERGENCY_OFF', { qos: 1, retain: true });
   const s = getState();
   s.emergency = false;
@@ -887,12 +892,14 @@ export const resolveEmergency = async (opts = {}) => {
 
 export const notifyEspKioskStage = (stage, extra = '') => {
   const payload = `STAGE:${stage}${extra ? '|' + extra : ''}`;
-  console.log('[ESP32-MQTT] Notifying Kiosk Stage:', payload);
+  console.log('[Kiosk Stage] Notifying Kiosk Stage:', payload);
+  sendSerialCommand(payload);
   safePublish(MQTT_CONFIG.emergencyTopic, payload, { qos: 0 });
 };
 
 export const notifyEspBreak = (stationName, onBreak = true) => {
   const payload = onBreak ? `BREAK:ON:${stationName}` : `BREAK:OFF:${stationName}`;
+  sendSerialCommand(payload);
   safePublish(MQTT_CONFIG.emergencyTopic, payload, { qos: 1 });
 };
 
@@ -927,4 +934,107 @@ export const resumeDoctorBreak = (doctorId) => {
   }
   return { ok: true };
 };
+
+// --- Web Serial API (Hybrid 0ms Local USB Transport for Underground Lab) ---
+let serialPort = null;
+let serialWriter = null;
+let isSerialConnected = false;
+let serialBuffer = '';
+
+export const isWebSerialActive = () => isSerialConnected;
+
+export const sendSerialCommand = async (cmdStr) => {
+  if (!isSerialConnected || !serialWriter) return false;
+  try {
+    const encoder = new TextEncoder();
+    await serialWriter.write(encoder.encode(cmdStr + '\n'));
+    return true;
+  } catch (e) {
+    console.warn('[WebSerial] Write error:', e);
+    return false;
+  }
+};
+
+export const connectWebSerial = async (userPrompt = false) => {
+  if (typeof navigator === 'undefined' || !navigator.serial) {
+    console.log('[WebSerial] Web Serial API not supported in this browser.');
+    return false;
+  }
+
+  try {
+    let port = null;
+    const ports = await navigator.serial.getPorts();
+    if (ports.length > 0) {
+      port = ports[0];
+    } else if (userPrompt) {
+      port = await navigator.serial.requestPort();
+    }
+
+    if (!port) return false;
+
+    await port.open({ baudRate: 115200 });
+    serialPort = port;
+    const textEncoder = new TextEncoderStream();
+    textEncoder.readable.pipeTo(port.writable);
+    serialWriter = textEncoder.writable.getWriter();
+    isSerialConnected = true;
+    console.log('[WebSerial] Connected to ESP32 over USB at 115200 baud (0ms latency)!');
+    if (typeof window !== 'undefined') {
+      window.dispatchEvent(new CustomEvent('triageq_serial_status', { detail: { connected: true } }));
+    }
+
+    readSerialLoop(port);
+    return true;
+  } catch (e) {
+    console.warn('[WebSerial] Connection failed / canceled:', e);
+    isSerialConnected = false;
+    if (typeof window !== 'undefined') {
+      window.dispatchEvent(new CustomEvent('triageq_serial_status', { detail: { connected: false } }));
+    }
+    return false;
+  }
+};
+
+async function readSerialLoop(port) {
+  try {
+    const textDecoder = new TextDecoderStream();
+    port.readable.pipeTo(textDecoder.writable);
+    const reader = textDecoder.readable.getReader();
+
+    while (true) {
+      const { value, done } = await reader.read();
+      if (done) break;
+      if (value) {
+        serialBuffer += value;
+        const lines = serialBuffer.split('\n');
+        serialBuffer = lines.pop();
+        for (const line of lines) {
+          handleSerialLine(line.trim());
+        }
+      }
+    }
+  } catch (e) {
+    console.warn('[WebSerial] Read stream ended:', e);
+  } finally {
+    isSerialConnected = false;
+    if (typeof window !== 'undefined') {
+      window.dispatchEvent(new CustomEvent('triageq_serial_status', { detail: { connected: false } }));
+    }
+  }
+}
+
+function handleSerialLine(line) {
+  if (!line) return;
+  if (line.startsWith('{') && line.endsWith('}')) {
+    try {
+      const v = JSON.parse(line);
+      if (v && (v.temp !== undefined || v.dist !== undefined || v.pulse !== undefined || v.motion !== undefined)) {
+        if (typeof window !== 'undefined') {
+          window.dispatchEvent(new CustomEvent('triageq_vitals_update', { detail: v }));
+        }
+        broadcastVitals(v);
+      }
+    } catch (e) {}
+  }
+}
 

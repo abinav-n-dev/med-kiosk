@@ -42,10 +42,18 @@
 #define ENABLE_PIR_MOTION 1
 #define PIR_PIN 27
 
-#define LCD_I2C_ADDR 0x27
-#define LCD_COLS 20
-#define LCD_ROWS 4
-// =================================================================
+// ===================== DUAL I2C LCD CONFIGURATION =====================
+// Display 1: 20x4 Character LCD (Dedicated Patient Kiosk Intake Display)
+#define LCD_KIOSK_ADDR 0x27
+#define LCD_KIOSK_COLS 20
+#define LCD_KIOSK_ROWS 4
+
+// Display 2: 16x2 Character LCD (Dedicated Waiting Hall Calling Display)
+// Solder jumper A0 bridged gives 0x26 (or 0x3E/0x38/0x3F)
+#define LCD_HALL_ADDR 0x26
+#define LCD_HALL_COLS 16
+#define LCD_HALL_ROWS 2
+// =====================================================================
 
 #include <LiquidCrystal_I2C.h>
 #include <PubSubClient.h>
@@ -86,7 +94,8 @@ const char *vitals_topic = "triageq/kiosk/vitals";
 #define ECHO_PIN 19
 
 // --- Device Objects ---
-LiquidCrystal_I2C lcd(LCD_I2C_ADDR, LCD_COLS, LCD_ROWS);
+LiquidCrystal_I2C lcdKiosk(LCD_KIOSK_ADDR, LCD_KIOSK_COLS, LCD_KIOSK_ROWS);
+LiquidCrystal_I2C lcdHall(LCD_HALL_ADDR, LCD_HALL_COLS, LCD_HALL_ROWS);
 WiFiClient espClient;
 PubSubClient client(espClient);
 
@@ -101,7 +110,9 @@ PulseOximeter pox;
 #endif
 
 // --- Sensor Availability Flags (Non-fatal: partial hardware works cleanly) ---
-bool lcdReady = false;
+bool lcdKioskReady = false;
+bool lcdHallReady = false;
+bool lcdReady = false; // Alias for backward compatibility
 bool mlxReady = false;
 bool oxReady = false;
 
@@ -210,46 +221,59 @@ unsigned long lastLcdRefresh = 0;
 
 // Register all 8 CGRAM character glyphs in LCD controller
 void initCustomGlyphs() {
-  if (!lcdReady) return;
-  lcd.createChar(0, (uint8_t*)GLYPH_EYE_OPEN_DATA);
-  lcd.createChar(1, (uint8_t*)GLYPH_EYE_BLINK_DATA);
-  lcd.createChar(2, (uint8_t*)GLYPH_EYE_HAPPY_DATA);
-  lcd.createChar(3, (uint8_t*)GLYPH_HEART_SM_DATA);
-  lcd.createChar(4, (uint8_t*)GLYPH_HEART_LG_DATA);
-  lcd.createChar(5, (uint8_t*)GLYPH_WATER_DROP_DATA);
-  lcd.createChar(6, (uint8_t*)GLYPH_WATER_CUP_DATA);
-  lcd.createChar(7, (uint8_t*)GLYPH_CHECK_DATA);
+  if (!lcdKioskReady) return;
+  lcdKiosk.createChar(0, (uint8_t*)GLYPH_EYE_OPEN_DATA);
+  lcdKiosk.createChar(1, (uint8_t*)GLYPH_EYE_BLINK_DATA);
+  lcdKiosk.createChar(2, (uint8_t*)GLYPH_EYE_HAPPY_DATA);
+  lcdKiosk.createChar(3, (uint8_t*)GLYPH_HEART_SM_DATA);
+  lcdKiosk.createChar(4, (uint8_t*)GLYPH_HEART_LG_DATA);
+  lcdKiosk.createChar(5, (uint8_t*)GLYPH_WATER_DROP_DATA);
+  lcdKiosk.createChar(6, (uint8_t*)GLYPH_WATER_CUP_DATA);
+  lcdKiosk.createChar(7, (uint8_t*)GLYPH_CHECK_DATA);
 }
 
-// --- LCD Safe Helper with Dirty Line Cache (Zero-Flicker) ---
-String lcdLineCache[LCD_ROWS] = {"", "", "", ""};
+// --- Dual LCD Safe Dirty-Line Caches (Zero-Flicker) ---
+String kioskLineCache[4] = {"", "", "", ""};
+String hallLineCache[2] = {"", ""};
 
-void lcdPrintLine(int row, String text) {
-  if (!lcdReady || row >= LCD_ROWS)
-    return;
-  
-  // Pad or trim strictly to 20 characters
-  while (text.length() < LCD_COLS)
-    text += " ";
-  if (text.length() > LCD_COLS)
-    text = text.substring(0, LCD_COLS);
+void kioskPrintLine(int row, String text) {
+  if (!lcdKioskReady || row < 0 || row >= LCD_KIOSK_ROWS) return;
+  while (text.length() < LCD_KIOSK_COLS) text += " ";
+  if (text.length() > LCD_KIOSK_COLS) text = text.substring(0, LCD_KIOSK_COLS);
 
-  // Eliminate LCD flickering: only write to physical LCD if the line actually changed
-  if (lcdLineCache[row] == text)
-    return;
-  lcdLineCache[row] = text;
+  if (kioskLineCache[row] == text) return;
+  kioskLineCache[row] = text;
 
-  lcd.setCursor(0, row);
-  for (int i = 0; i < LCD_COLS; i++) {
+  lcdKiosk.setCursor(0, row);
+  for (int i = 0; i < LCD_KIOSK_COLS; i++) {
     char c = text.charAt(i);
     if (c == '\x08') {
-      lcd.write((uint8_t)0);
+      lcdKiosk.write((uint8_t)0);
     } else if (c >= 1 && c <= 7) {
-      lcd.write((uint8_t)c);
+      lcdKiosk.write((uint8_t)c);
     } else {
-      lcd.write((uint8_t)c);
+      lcdKiosk.write((uint8_t)c);
     }
   }
+}
+
+void hallPrintLine(int row, String text) {
+  if (!lcdHallReady || row < 0 || row >= LCD_HALL_ROWS) return;
+  while (text.length() < LCD_HALL_COLS) text += " ";
+  if (text.length() > LCD_HALL_COLS) text = text.substring(0, LCD_HALL_COLS);
+
+  if (hallLineCache[row] == text) return;
+  hallLineCache[row] = text;
+
+  lcdHall.setCursor(0, row);
+  for (int i = 0; i < LCD_HALL_COLS; i++) {
+    lcdHall.write((uint8_t)text.charAt(i));
+  }
+}
+
+// Backward-compatibility wrapper for existing single-screen calls
+void lcdPrintLine(int row, String text) {
+  kioskPrintLine(row, text);
 }
 
 // --- I2C Boot Diagnostics (Prints LCD, Oximeter Part ID, and MLX90614 Status)
@@ -268,10 +292,12 @@ void scanI2CBus() {
       if (addr < 16)
         Serial.print("0");
       Serial.print(addr, HEX);
-      if (addr == LCD_I2C_ADDR)
-        Serial.print(" (20x4 LCD Backpack)");
+      if (addr == LCD_KIOSK_ADDR)
+        Serial.print(" (20x4 Kiosk LCD)");
+      else if (addr == LCD_HALL_ADDR)
+        Serial.print(" (16x2 Hall LCD)");
       else if (addr == 0x3F)
-        Serial.print(" (Alt LCD Backpack - set LCD_I2C_ADDR 0x3F if blank)");
+        Serial.print(" (Alt LCD Backpack - set LCD_KIOSK_ADDR 0x3F if blank)");
       else if (addr == 0x57) {
         Serial.print(" (MAX3010x Oximeter)");
         sawOximeter = true;
@@ -313,16 +339,44 @@ bool checkI2CAddress(byte addr) {
 }
 
 void initSensors() {
-  lcdReady = checkI2CAddress(LCD_I2C_ADDR);
-  if (lcdReady) {
-    lcd.init();
-    lcd.backlight();
-    lcd.clear();
+  // 1. Primary Display: 20x4 Kiosk LCD (0x27 or 0x3F)
+  if (checkI2CAddress(LCD_KIOSK_ADDR)) {
+    lcdKioskReady = true;
+  } else if (checkI2CAddress(0x3F)) {
+    lcdKiosk = LiquidCrystal_I2C(0x3F, LCD_KIOSK_COLS, LCD_KIOSK_ROWS);
+    lcdKioskReady = true;
+  }
+
+  if (lcdKioskReady) {
+    lcdKiosk.init();
+    lcdKiosk.backlight();
+    lcdKiosk.clear();
     initCustomGlyphs();
-    Serial.println("[LCD] 20x4 I2C LCD initialized with custom CGRAM Desk Buddy glyphs.");
+    lcdReady = true;
+    Serial.println("[LCD KIOSK] 20x4 I2C LCD initialized (Patient Intake Display).");
   } else {
-    Serial.println("[LCD] Not detected at configured LCD_I2C_ADDR; running "
-                   "headless on Serial.");
+    lcdReady = false;
+    Serial.println("[LCD KIOSK] 20x4 LCD not detected at 0x27/0x3F; running headless on Serial.");
+  }
+
+  // 2. Secondary Display: 16x2 Waiting Hall LCD (0x26 with A0 bridge, or 0x3E/0x38)
+  if (checkI2CAddress(LCD_HALL_ADDR)) {
+    lcdHallReady = true;
+  } else if (checkI2CAddress(0x3E)) {
+    lcdHall = LiquidCrystal_I2C(0x3E, LCD_HALL_COLS, LCD_HALL_ROWS);
+    lcdHallReady = true;
+  } else if (checkI2CAddress(0x38)) {
+    lcdHall = LiquidCrystal_I2C(0x38, LCD_HALL_COLS, LCD_HALL_ROWS);
+    lcdHallReady = true;
+  }
+
+  if (lcdHallReady) {
+    lcdHall.init();
+    lcdHall.backlight();
+    lcdHall.clear();
+    Serial.println("[LCD HALL] 16x2 I2C LCD initialized (Waiting Hall Display).");
+  } else {
+    Serial.println("[LCD HALL] 16x2 LCD not detected yet (will activate once wired at 0x26).");
   }
 
 #if ENABLE_MLX90614
@@ -413,85 +467,143 @@ char getLiveEyeGlyph() {
   return eyeIsBlinking ? '\x01' : '\x08';
 }
 
-// Render clean, professional MediCore Clinic waiting hall display
-void refreshDeskBuddyDisplay() {
-  if (!lcdReady || emergencyActive) return;
+// --- Display 1: Dedicated 20x4 Patient Kiosk Intake Display ---
+void refreshKioskDisplay() {
+  if (!lcdKioskReady || emergencyActive) return;
 
-  // 1. If currently calling a patient (hold full calling banner for 25s)
+  // Single-screen fallback: If 16x2 Hall screen is not attached, let 20x4 handle active doctor calls
+  if (!lcdHallReady && currentBuddyState == BUDDY_CALL && (millis() - lastCallTime < 25000)) {
+    kioskPrintLine(0, activeCalledEmergency ? "* CRITICAL CALL *   " : "*** NOW CALLING *** ");
+    String line1 = "TOKEN: " + activeCalledToken;
+    while (line1.length() < 20) line1 += " ";
+    kioskPrintLine(1, line1);
+    String line2 = activeCalledDoctor;
+    while (line2.length() < 20) line2 += " ";
+    kioskPrintLine(2, line2);
+    String line3 = (activeCalledRoom.length() > 0) ? ("PLEASE GO TO " + activeCalledRoom) : "PROCEED TO CABIN    ";
+    while (line3.length() < 20) line3 += " ";
+    kioskPrintLine(3, line3);
+    return;
+  }
+
+  // Patient Intake Kiosk Stages on 20x4 Display
+  if (currentKioskStage == "standby") {
+    kioskPrintLine(0, "=== MEDICORE CLINIC =");
+    kioskPrintLine(1, "Smart Intake Kiosk  ");
+    kioskPrintLine(2, currentMotion ? "PATIENT DETECTED!   " : "Approach To Begin   ");
+    kioskPrintLine(3, "[PIR + Radar Active]");
+  } else if (currentKioskStage == "lang" || currentKioskStage == "name" || currentKioskStage == "age" || currentKioskStage == "ask") {
+    kioskPrintLine(0, "PATIENT REGISTRATION");
+    kioskPrintLine(1, "Please Touch Screen ");
+    kioskPrintLine(2, "To Enter Details    ");
+    kioskPrintLine(3, "Next: Vitals Intake ");
+  } else if (currentKioskStage == "align") {
+    kioskPrintLine(0, "STEP 1: TEMP ALIGN  ");
+    bool inTarget = (currentDistanceCm >= 3 && currentDistanceCm <= 5);
+    String distStr = (currentDistanceCm > 15) ? "Dist: >15cm (Too Far)" : ("Dist: " + String(currentDistanceCm) + " cm " + (inTarget ? "[TARGET]" : "[ADJUST]"));
+    kioskPrintLine(1, distStr);
+
+    // Dynamic distance bar gauge [====|-----------] 4cm
+    int meterPos = constrain(currentDistanceCm, 0, 15);
+    String gauge = "[";
+    for (int i = 0; i < 14; i++) {
+      if (i == 4) gauge += "|";
+      else if (i == meterPos) gauge += "#";
+      else gauge += "-";
+    }
+    gauge += "] " + String(currentDistanceCm) + "cm";
+    kioskPrintLine(2, gauge);
+    kioskPrintLine(3, inTarget ? "HOLD STILL: 3-5 CM  " : "MOVE CLOSER (3-5CM) ");
+  } else if (currentKioskStage == "temp_scan" || currentKioskStage == "scan_temp") {
+    kioskPrintLine(0, "DISTANCE LOCKED OK  ");
+    kioskPrintLine(1, "Measuring Temp...   ");
+    String sec = (buddyStageExtra.length() > 0) ? buddyStageExtra : "3";
+    kioskPrintLine(2, "      [ " + sec + "s... ]       ");
+    kioskPrintLine(3, "Keep Forehead Steady");
+  } else if (currentKioskStage == "temp_ok") {
+    kioskPrintLine(0, "TEMP RECORDED       ");
+    String tStr = tempValid ? (String(currentTempF, 1) + " F ") : (buddyStageExtra + " F ");
+    bool isFever = (tempValid && currentTempF >= 100.4f) || (buddyStageExtra.toFloat() >= 100.4f);
+    kioskPrintLine(1, tStr + (isFever ? "[HIGH FEVER]" : "[NORMAL]    "));
+    kioskPrintLine(2, "Next: Blood Oxygen  ");
+    kioskPrintLine(3, "Proceed To Sensor   ");
+  } else if (currentKioskStage == "tutorial_spo2" || currentKioskStage == "spo2") {
+    kioskPrintLine(0, "STEP 2: SpO2 & PULSE");
+    kioskPrintLine(1, fingerPresent ? "Finger: DETECTED    " : "Place Index Finger  ");
+    kioskPrintLine(2, fingerPresent ? "Reading Pulse...    " : "On Red Glow Sensor  ");
+    String pStr = (fingerPresent && currentPulse > 0) ? ("Live HR: " + String(currentPulse) + " BPM") : "Relax & Hold Still  ";
+    kioskPrintLine(3, pStr);
+  } else if (currentKioskStage == "spo2_scan") {
+    kioskPrintLine(0, "MEASURING SpO2...   ");
+    kioskPrintLine(1, "Finger: DETECTED    ");
+    String sec = (buddyStageExtra.length() > 0) ? buddyStageExtra : "5";
+    kioskPrintLine(2, "Settling in: " + sec + "s...   ");
+    String pStr = (currentPulse > 0) ? ("Live HR: " + String(currentPulse) + " BPM") : "Hold Finger Steady  ";
+    kioskPrintLine(3, pStr);
+  } else if (currentKioskStage == "vitals" || currentKioskStage == "summary" || currentKioskStage == "vitals_done") {
+    kioskPrintLine(0, "CLINICAL VITALS OK  ");
+    String tStr = tempValid ? (String(currentTempF, 1) + "F ") : "--.-F ";
+    bool isFever = tempValid && currentTempF >= 100.4f;
+    kioskPrintLine(1, "Temp: " + tStr + (isFever ? "[FEVER]" : "[NORM]"));
+    String sStr = (currentSpO2 > 0) ? (String(currentSpO2) + "% ") : "--% ";
+    String hStr = (currentPulse > 0) ? (String(currentPulse) + "BPM") : "--";
+    kioskPrintLine(2, "SpO2: " + sStr + "| HR: " + hStr);
+    kioskPrintLine(3, "Select Doctor Next  ");
+  } else if (currentKioskStage == "token") {
+    kioskPrintLine(0, "=== TOKEN ISSUED ===");
+    kioskPrintLine(1, "TOKEN: " + buddyStageExtra);
+    kioskPrintLine(2, "Please Take QR Slip ");
+    kioskPrintLine(3, "Proceed To Waiting  ");
+  } else {
+    kioskPrintLine(0, "=== MEDICORE CLINIC =");
+    kioskPrintLine(1, "Smart Intake Kiosk  ");
+    kioskPrintLine(2, "OPD Intake Active   ");
+    kioskPrintLine(3, "Follow Screen Prompt");
+  }
+}
+
+// --- Display 2: Dedicated 16x2 Waiting Hall Calling Display ---
+void refreshHallDisplay() {
+  if (!lcdHallReady) return;
+
+  if (emergencyActive) {
+    hallPrintLine(0, "*EMERGENCY ALERT*");
+    hallPrintLine(1, "CODE BLUE IN HALL");
+    return;
+  }
+
   if (currentBuddyState == BUDDY_CALL) {
-    if (millis() - lastCallTime < 25000) {
-      lcdPrintLine(0, activeCalledEmergency ? "* CRITICAL CALL *   " : "*** NOW CALLING *** ");
-      String line1 = "TOKEN: " + activeCalledToken;
-      while (line1.length() < 20) line1 += " ";
-      lcdPrintLine(1, line1);
-
-      String line2 = activeCalledDoctor;
-      while (line2.length() < 20) line2 += " ";
-      lcdPrintLine(2, line2);
-
-      String line3 = (activeCalledRoom.length() > 0) ? ("PLEASE GO TO " + activeCalledRoom) : "PROCEED TO CABIN    ";
-      while (line3.length() < 20) line3 += " ";
-      lcdPrintLine(3, line3);
-      return;
-    } else {
-      // Transition from calling banner to ongoing consultation in hall display
-      currentBuddyState = BUDDY_STANDBY;
-    }
+    hallPrintLine(0, (activeCalledEmergency ? "*EMERG* " : "CALL: ") + activeCalledToken);
+    String docStr = activeCalledDoctor.length() > 0 ? activeCalledDoctor : ("GO TO " + activeCalledRoom);
+    hallPrintLine(1, docStr.substring(0, 16));
+    return;
   }
 
-  // 2. If a consultation just concluded (hold for 6 seconds)
   if (currentBuddyState == BUDDY_DONE) {
-    if (millis() - stageSetTime < 6000) {
-      lcdPrintLine(0, "--- CONSULT DONE ---");
-      String line1 = activeCalledRoom + " AVAILABLE  ";
-      while (line1.length() < 20) line1 += " ";
-      lcdPrintLine(1, line1);
-      String line2 = activeCalledDoctor;
-      while (line2.length() < 20) line2 += " ";
-      lcdPrintLine(2, line2);
-      lcdPrintLine(3, "NEXT CALL SHORTLY   ");
-      return;
-    } else {
-      currentBuddyState = BUDDY_STANDBY;
-    }
+    hallPrintLine(0, "CONSULT DONE    ");
+    hallPrintLine(1, (activeCalledRoom.length() > 0 ? activeCalledRoom : "CABIN") + " AVAILABLE");
+    return;
   }
 
-  switch (currentBuddyState) {
-    case BUDDY_TOKEN: {
-      if (millis() - stageSetTime < 6000) {
-        lcdPrintLine(0, "=== MEDICORE CLINIC =");
-        lcdPrintLine(1, "NEW TOKEN ISSUED    ");
-        String tokLine = "TOKEN: " + buddyStageExtra;
-        while (tokLine.length() < 20) tokLine += " ";
-        lcdPrintLine(2, tokLine);
-        lcdPrintLine(3, "PROCEED TO WAITING  ");
-      } else {
-        currentBuddyState = BUDDY_STANDBY;
-      }
-      break;
-    }
-    case BUDDY_STANDBY:
-    default: {
-      lcdPrintLine(0, "=== MEDICORE CLINIC =");
-
-      // Public Waiting Hall Announcement Display (strictly tokens & consultation status)
-      if (activeCalledToken.length() > 0) {
-        lcdPrintLine(1, "OPD CONSULT ACTIVE  ");
-        String line2 = "SERVING: " + activeCalledToken;
-        while (line2.length() < 20) line2 += " ";
-        lcdPrintLine(2, line2);
-        String line3 = activeCalledRoom + ": " + activeCalledDoctor;
-        if (line3.length() > 20) line3 = line3.substring(0, 20);
-        while (line3.length() < 20) line3 += " ";
-        lcdPrintLine(3, line3);
-      } else {
-        lcdPrintLine(1, "OPD CONSULT ACTIVE  ");
-        lcdPrintLine(2, "PLEASE WAIT IN HALL ");
-        lcdPrintLine(3, "RM 101: DR. GAURAV  ");
-      }
-      break;
-    }
+  if (currentBuddyState == BUDDY_BREAK) {
+    hallPrintLine(0, "DOCTOR ON BREAK ");
+    hallPrintLine(1, buddyStageExtra.length() > 0 ? buddyStageExtra.substring(0, 16) : "RESUMING SOON   ");
+    return;
   }
+
+  // Default Waiting Hall Status
+  hallPrintLine(0, "MEDICORE CLINIC ");
+  if (activeCalledToken.length() > 0) {
+    hallPrintLine(1, "SERVING: " + activeCalledToken);
+  } else {
+    hallPrintLine(1, "WAITING IN OPD  ");
+  }
+}
+
+// Render both displays simultaneously
+void refreshDeskBuddyDisplay() {
+  refreshKioskDisplay();
+  refreshHallDisplay();
 }
 
 void handleKioskStage(String payload) {
@@ -501,9 +613,8 @@ void handleKioskStage(String payload) {
   String stage = (pipe != -1) ? payload.substring(0, pipe) : payload;
   String extra = (pipe != -1) ? payload.substring(pipe + 1) : "";
 
-  // If a doctor has called a patient within the last 25 seconds,
-  // do NOT let a kiosk standby/align event wipe the doctor call screen!
-  if (currentBuddyState == BUDDY_CALL && (millis() - lastCallTime < 25000)) {
+  // If only 1 LCD present and doctor has called a patient within 25s, hold banner
+  if (!lcdHallReady && currentBuddyState == BUDDY_CALL && (millis() - lastCallTime < 25000)) {
     if (stage != "token") {
       return;
     }
@@ -550,8 +661,9 @@ void sampleMotion(unsigned long now) {
   currentMotion = (m == HIGH || ultrasonicApproach) ? 1 : 0;
   if (currentMotion == 1) {
     lastMotionSeenAt = now;
-    if (lcdSleeping && lcdReady) {
-      lcd.backlight();
+    if (lcdSleeping) {
+      if (lcdKioskReady) lcdKiosk.backlight();
+      if (lcdHallReady) lcdHall.backlight();
       lcdSleeping = false;
     }
   }
@@ -816,7 +928,7 @@ void publishVitals(unsigned long now) {
   bool publishNow = fingerChanged || motionChanged || (changed && (now - lastVitalsPublish >= 120)) ||
                     (now - lastVitalsPublish >= 1500);
 
-  if (!publishNow || !client.connected())
+  if (!publishNow)
     return;
 
   lastVitalsPublish = now;
@@ -839,7 +951,13 @@ void publishVitals(unsigned long now) {
                    ",\"finger\":" + (fingerPresent ? "true" : "false") +
                    ",\"ir\":" + String(pox.getRawIR()) +
                    ",\"red\":" + String(pox.getRawRed()) + "}";
-  client.publish(vitals_topic, payload.c_str(), true);
+
+  // Output JSON directly on USB Serial for 0ms Web Serial link to kiosk laptop
+  Serial.println(payload);
+
+  if (client.connected()) {
+    client.publish(vitals_topic, payload.c_str(), true);
+  }
 
   if (changed) {
     Serial.println("[VITALS HW] Temp: " + tempJson + " F | SpO2: " +
@@ -1029,12 +1147,11 @@ void setup_wifi() {
   }
 }
 
-void callback(char *topic, byte *payload, unsigned int length) {
-  String message = "";
-  for (unsigned int i = 0; i < length; i++)
-    message += (char)payload[i];
+String serialBuffer = "";
 
-  Serial.println("[MQTT RECEIVE] " + String(topic) + " -> " + message);
+void processIncomingCommand(String message) {
+  message.trim();
+  if (message.length() == 0) return;
 
   if (message.indexOf("EMERGENCY_ON") >= 0) {
     triggerEmergency();
@@ -1064,8 +1181,33 @@ void callback(char *topic, byte *payload, unsigned int length) {
     lastSentMotion = 999;
     lastSentFingerPresent = !fingerPresent;
     lastVitalsPublish = 0;
-    Serial.println("[MQTT] Kiosk Web Client Requested Sync -> Instant Vitals Broadcast");
+    Serial.println("[COMMAND] Web Client Requested Sync -> Instant Vitals Broadcast");
   }
+}
+
+void handleSerialInput() {
+  while (Serial.available() > 0) {
+    char c = (char)Serial.read();
+    if (c == '\n' || c == '\r') {
+      if (serialBuffer.length() > 0) {
+        processIncomingCommand(serialBuffer);
+        serialBuffer = "";
+      }
+    } else {
+      if (serialBuffer.length() < 256) {
+        serialBuffer += c;
+      }
+    }
+  }
+}
+
+void callback(char *topic, byte *payload, unsigned int length) {
+  String message = "";
+  for (unsigned int i = 0; i < length; i++)
+    message += (char)payload[i];
+
+  Serial.println("[MQTT RECEIVE] " + String(topic) + " -> " + message);
+  processIncomingCommand(message);
 }
 
 unsigned long lastMqttRetry = 0;
@@ -1236,6 +1378,8 @@ void setup() {
 }
 
 void loop() {
+  handleSerialInput();
+
   if (WiFi.status() == WL_CONNECTED) {
     if (!client.connected()) {
       reconnect();
