@@ -545,7 +545,9 @@ void showStandby() {
 void sampleMotion(unsigned long now) {
 #if ENABLE_PIR_MOTION
   int m = digitalRead(PIR_PIN);
-  currentMotion = (m == HIGH) ? 1 : 0;
+  // Dual-sensing approach detection: physical PIR HIGH or ultrasonic hand/body within 25 cm
+  bool ultrasonicApproach = (currentDistanceCm > 0 && currentDistanceCm <= 25);
+  currentMotion = (m == HIGH || ultrasonicApproach) ? 1 : 0;
   if (currentMotion == 1) {
     lastMotionSeenAt = now;
     if (lcdSleeping && lcdReady) {
@@ -803,15 +805,15 @@ void publishVitals(unsigned long now) {
     return;
 
   bool fingerChanged = (fingerPresent != lastSentFingerPresent);
+  bool motionChanged = (currentMotion != lastSentMotion);
   bool tempChanged = (tempValid != lastSentTempValid) ||
                      (tempValid && fabsf(currentTempF - lastSentTempF) >= 0.1f);
-  bool changed = fingerChanged || tempChanged || (currentSpO2 != lastSentSpO2) ||
+  bool changed = fingerChanged || motionChanged || tempChanged || (currentSpO2 != lastSentSpO2) ||
                  (abs(currentPulse - lastSentPulse) >= 2) ||
-                 (currentDistanceCm != lastSentDist) ||
-                 (currentMotion != lastSentMotion);
+                 (currentDistanceCm != lastSentDist);
 
-  // If finger state changed (touch or lift), publish INSTANTLY with 0 delay!
-  bool publishNow = fingerChanged || (changed && (now - lastVitalsPublish >= 120)) ||
+  // If finger state changed (touch or lift) OR motion changed, publish INSTANTLY with 0 delay!
+  bool publishNow = fingerChanged || motionChanged || (changed && (now - lastVitalsPublish >= 120)) ||
                     (now - lastVitalsPublish >= 1500);
 
   if (!publishNow || !client.connected())
@@ -837,7 +839,7 @@ void publishVitals(unsigned long now) {
                    ",\"finger\":" + (fingerPresent ? "true" : "false") +
                    ",\"ir\":" + String(pox.getRawIR()) +
                    ",\"red\":" + String(pox.getRawRed()) + "}";
-  client.publish(vitals_topic, payload.c_str());
+  client.publish(vitals_topic, payload.c_str(), true);
 
   if (changed) {
     Serial.println("[VITALS HW] Temp: " + tempJson + " F | SpO2: " +
@@ -1058,6 +1060,11 @@ void callback(char *topic, byte *payload, unsigned int length) {
     handleDone(message.substring(5));
   } else if (message.startsWith("CALL_NEXT:")) {
     handleLegacyCallNext(message.substring(10));
+  } else if (message.indexOf("REQ_SYNC") >= 0) {
+    lastSentMotion = 999;
+    lastSentFingerPresent = !fingerPresent;
+    lastVitalsPublish = 0;
+    Serial.println("[MQTT] Kiosk Web Client Requested Sync -> Instant Vitals Broadcast");
   }
 }
 
@@ -1076,6 +1083,7 @@ void reconnect() {
   if (client.connect(clientId.c_str())) {
     Serial.println(" Connected!");
     client.subscribe(emergency_topic);
+    client.subscribe("triageq/queue/sync");
     if (!emergencyActive)
       showStandby();
   } else {

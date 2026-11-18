@@ -660,7 +660,7 @@ export const initMqtt = () => {
             const msg = payload.toString();
             if (topic === MQTT_CONFIG.vitalsTopic) {
               const v = JSON.parse(msg);
-              if (v && (v.temp !== undefined || v.pulse !== undefined || v.spo2 !== undefined || v.dist !== undefined || v.light !== undefined)) {
+              if (v && (v.temp !== undefined || v.pulse !== undefined || v.spo2 !== undefined || v.dist !== undefined || v.light !== undefined || v.motion !== undefined)) {
                 if (typeof window !== 'undefined') {
                   window.dispatchEvent(new CustomEvent('triageq_vitals_update', { detail: v }));
                 }
